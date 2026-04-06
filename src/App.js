@@ -10,7 +10,8 @@ function App() {
   const qrRef = useRef();
 
   // 🔥 URL BASE (cámbiala cuando publiques)
-  const baseUrl = "http://localhost:3000";
+  const baseUrl = process.env.REACT_APP_PUBLIC_URL || window.location.origin;
+  const apiUrl = process.env.REACT_APP_API_URL;
 
   const consultar = async (codigo) => {
     try {
@@ -18,7 +19,7 @@ function App() {
       codigo = codigo.replace(baseUrl + "/", "");
 
       const response = await fetch(
-        `https://localhost:7048/api/Lotes/trazabilidad/${codigo}`
+        `${apiUrl}/api/Lotes/trazabilidad/${codigo}`
       );
 
       console.log("Status:", response.status);
