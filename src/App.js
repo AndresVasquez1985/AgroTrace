@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -13,36 +13,35 @@ function App() {
   const baseUrl = process.env.REACT_APP_PUBLIC_URL || window.location.origin;
   const apiUrl = process.env.REACT_APP_API_URL;
 
-  const consultar = async (codigo) => {
-    try {
-      // 🔧 Limpia URL si viene completa
-      codigo = codigo.replace(baseUrl + "/", "");
+  const consultar = useCallback(async (codigo) => {
+  try {
+    codigo = codigo.replace(baseUrl + "/", "");
 
-      const response = await fetch(
-        `${apiUrl}/api/Lotes/trazabilidad/${codigo}`
-      );
+    const response = await fetch(
+      `${apiUrl}/api/Lotes/trazabilidad/${codigo}`
+    );
 
-      console.log("Status:", response.status);
+    console.log("Status:", response.status);
 
-      if (!response.ok) {
-        alert("QR no encontrado o error en API");
-        return;
-      }
-
-      const text = await response.text();
-
-      if (!text) {
-        alert("Respuesta vacía del servidor");
-        return;
-      }
-
-      const result = JSON.parse(text);
-      setData(result);
-    } catch (error) {
-      console.error("ERROR COMPLETO:", error);
-      alert("Error consultando trazabilidad");
+    if (!response.ok) {
+      alert("QR no encontrado o error en API");
+      return;
     }
-  };
+
+    const text = await response.text();
+
+    if (!text) {
+      alert("Respuesta vacía del servidor");
+      return;
+    }
+
+    const result = JSON.parse(text);
+    setData(result);
+  } catch (error) {
+    console.error("ERROR COMPLETO:", error);
+    alert("Error consultando trazabilidad");
+  }
+}, [apiUrl, baseUrl]);
 
   const descargarQR = () => {
     const canvas = qrRef.current.querySelector("canvas");
@@ -56,36 +55,35 @@ function App() {
 
   // 📷 Escáner QR
   useEffect(() => {
-    if (scan) {
-      const qrCode = new Html5Qrcode("reader");
+  if (scan) {
+    const qrCode = new Html5Qrcode("reader");
 
-      qrCode
-        .start(
-          { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: 250,
-          },
-          (decodedText) => {
-            setQr(decodedText);
-            consultar(decodedText);
-            qrCode.stop();
-            setScan(false);
-          }
-        )
-        .catch((err) => console.error(err));
-    }
-  }, [scan]);
+    qrCode
+      .start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: 250,
+        },
+        (decodedText) => {
+          setQr(decodedText);
+          consultar(decodedText);
+          qrCode.stop();
+          setScan(false);
+        }
+      )
+      .catch((err) => console.error(err));
+  }
+}, [scan, consultar]);
 
-  // 🌐 Leer QR desde URL
-  useEffect(() => {
-    const path = window.location.pathname.replace("/", "");
+useEffect(() => {
+  const path = window.location.pathname.replace("/", "");
 
-    if (path) {
-      setQr(path);
-      consultar(path);
-    }
-  }, []);
+  if (path) {
+    setQr(path);
+    consultar(path);
+  }
+}, [consultar]);
 
   return (
     <div style={styles.container}>
