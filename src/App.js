@@ -6,6 +6,7 @@ function App() {
   const [qr, setQr] = useState("");
   const [data, setData] = useState(null);
   const [scan, setScan] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const qrRef = useRef();
 
@@ -15,6 +16,7 @@ function App() {
 
   const consultar = useCallback(async (codigo) => {
   try {
+    setLoading(true);
     codigo = codigo.replace(baseUrl + "/", "");
 
     const response = await fetch(
@@ -25,6 +27,7 @@ function App() {
 
     if (!response.ok) {
       alert("QR no encontrado o error en API");
+      setLoading(true);
       return;
     }
 
@@ -32,6 +35,7 @@ function App() {
 
     if (!text) {
       alert("Respuesta vacía del servidor");
+      setLoading(false);
       return;
     }
 
@@ -40,6 +44,8 @@ function App() {
   } catch (error) {
     console.error("ERROR COMPLETO:", error);
     alert("Error consultando trazabilidad");
+  } finally {
+    setLoading(false);
   }
 }, [apiUrl, baseUrl]);
 
@@ -108,7 +114,12 @@ useEffect(() => {
       <button style={styles.button} onClick={() => consultar(qr)}>
         Consultar
       </button>
-
+      {loading && (
+      <div style={styles.loader}>
+        <div style={styles.spinner}></div>
+        <p>Consultando trazabilidad...</p>
+      </div>
+      )}
       {data && (
         <div style={styles.card}>
           <h2>📦 Código QR</h2>
@@ -189,6 +200,30 @@ const styles = {
   reader: {
     marginTop: "20px",
   },
+  
+  loader: {
+  marginTop: "20px",
+  textAlign: "center",
+  },
+
+  spinner: {
+    border: "6px solid #f3f3f3",
+    borderTop: "6px solid #2E7D32",
+    borderRadius: "50%",
+    width: "40px",
+    height: "40px",
+    animation: "spin 1s linear infinite",
+    margin: "auto",
+  },
+
 };
+
+const styleSheet = document.styleSheets[0];
+styleSheet.insertRule(`
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+`, styleSheet.cssRules.length);
 
 export default App;
