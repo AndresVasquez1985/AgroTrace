@@ -14,5 +14,12 @@ export async function apiFetch(endpoint, options = {}) {
     headers,
   });
 
+  if (response.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("authUser");
+    window.location.href = "/login";
+    return response;
+  }
+
   return response;
 }

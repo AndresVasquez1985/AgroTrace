@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import AdminLayout from "../components/AdminLayout";
 import {
   createUser,
   getUsers,
@@ -10,6 +11,7 @@ import { useAuth } from "../auth/AuthContext";
 function UsersPage() {
   const { user } = useAuth();
 
+  const [success, setSuccess] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,6 +56,7 @@ function UsersPage() {
     try {
       setSaving(true);
       setError("");
+      setSuccess("");
 
       await createUser({
         fullName: form.fullName.trim(),
@@ -69,6 +72,7 @@ function UsersPage() {
         role: "Operador",
       });
 
+      setSuccess("Usuario creado correctamente.");
       await loadUsers();
     } catch (err) {
       setError(err.message || "No fue posible crear el usuario.");
@@ -78,155 +82,192 @@ function UsersPage() {
   };
 
   const handleToggleStatus = async (item) => {
-    try {
-      setError("");
-      await updateUserStatus(item.id, !item.isActive);
-      await loadUsers();
-    } catch (err) {
-      setError(err.message || "No fue posible actualizar el estado.");
-    }
-  };
+  const actionText = item.isActive ? "inactivar" : "activar";
+  const confirmed = window.confirm(
+    `¿Deseas ${actionText} al usuario ${item.fullName}?`
+  );
 
-  const handleRoleChange = async (item, role) => {
-    try {
-      setError("");
-      await updateUserRole(item.id, role);
-      await loadUsers();
-    } catch (err) {
-      setError(err.message || "No fue posible actualizar el rol.");
-    }
-  };
+  if (!confirmed) return;
 
+  try {
+    setError("");
+    setSuccess("");
+
+    await updateUserStatus(item.id, !item.isActive);
+
+    setSuccess(
+      `Usuario ${item.isActive ? "inactivado" : "activado"} correctamente.`
+    );
+
+    await loadUsers();
+  } catch (err) {
+    setError(err.message || "No fue posible actualizar el estado.");
+  }
+};
+
+const handleRoleChange = async (item, role) => {
+  if (item.role === role) return;
+
+  const confirmed = window.confirm(
+    `¿Deseas cambiar el rol de ${item.fullName} a ${role}?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setError("");
+    setSuccess("");
+
+    await updateUserRole(item.id, role);
+
+    setSuccess("Rol actualizado correctamente.");
+    await loadUsers();
+  } catch (err) {
+    setError(err.message || "No fue posible actualizar el rol.");
+  }
+};
   const isAdmin = user?.role === "Admin";
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <div>
-          <h1 style={styles.title}>Gestión de usuarios</h1>
-          <p style={styles.subtitle}>
-            Administra usuarios, roles y estado de acceso.
-          </p>
+    <AdminLayout>
+      <div style={styles.page}>
+        <div style={styles.header}>
+          <div>
+            <h1 style={styles.title}>Gestión de usuarios</h1>
+            <p style={styles.subtitle}>
+              Administra usuarios, roles y estado de acceso.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {error && <div style={styles.errorBox}>{error}</div>}
+        {error && <div style={styles.errorBox}>{error}</div>}
+        {success && <div style={styles.successBox}>{success}</div>}
 
-      {isAdmin && (
-        <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>Crear usuario</h2>
+        {isAdmin && (
+          <div style={styles.card}>
+            <h2 style={styles.sectionTitle}>Crear usuario</h2>
 
-          <form onSubmit={handleCreateUser} style={styles.formGrid}>
-            <input
-              style={styles.input}
-              type="text"
-              name="fullName"
-              placeholder="Nombre completo"
-              value={form.fullName}
-              onChange={handleChange}
-              required
-            />
+            <form onSubmit={handleCreateUser} style={styles.formGrid}>
+              <input
+                style={styles.input}
+                type="text"
+                name="fullName"
+                placeholder="Nombre completo"
+                value={form.fullName}
+                onChange={handleChange}
+                required
+              />
 
-            <input
-              style={styles.input}
-              type="email"
-              name="email"
-              placeholder="Correo"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
+              <input
+                style={styles.input}
+                type="email"
+                name="email"
+                placeholder="Correo"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
 
-            <input
-              style={styles.input}
-              type="password"
-              name="password"
-              placeholder="Contraseña"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+              <input
+                style={styles.input}
+                type="password"
+                name="password"
+                placeholder="Contraseña"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
 
-            <select
-              style={styles.input}
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-            >
-              <option value="Admin">Admin</option>
-              <option value="Operador">Operador</option>
-            </select>
+              <select
+                style={styles.input}
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+              >
+                <option value="Admin">Admin</option>
+                <option value="Operador">Operador</option>
+              </select>
 
-            <button style={styles.primaryButton} type="submit" disabled={saving}>
-              {saving ? "Guardando..." : "Crear usuario"}
-            </button>
-          </form>
-        </div>
-      )}
-
-      <div style={styles.card}>
-        <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
-
-        {loading ? (
-          <p>Cargando usuarios...</p>
-        ) : (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Nombre</th>
-                  <th style={styles.th}>Correo</th>
-                  <th style={styles.th}>Rol</th>
-                  <th style={styles.th}>Estado</th>
-                  {isAdmin && <th style={styles.th}>Acciones</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((item) => (
-                  <tr key={item.id}>
-                    <td style={styles.td}>{item.fullName}</td>
-                    <td style={styles.td}>{item.email}</td>
-                    <td style={styles.td}>{item.role}</td>
-                    <td style={styles.td}>
-                      <span
-                        style={{
-                          ...styles.badge,
-                          ...(item.isActive ? styles.badgeActive : styles.badgeInactive),
-                        }}
-                      >
-                        {item.isActive ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-
-                    {isAdmin && (
-                      <td style={styles.td}>
-                        <div style={styles.actions}>
-                          <button
-                            style={styles.secondaryButton}
-                            onClick={() => handleToggleStatus(item)}
-                          >
-                            {item.isActive ? "Inactivar" : "Activar"}
-                          </button>
-
-                          <select
-                            style={styles.actionSelect}
-                            value={item.role}
-                            onChange={(e) => handleRoleChange(item, e.target.value)}
-                          >
-                            <option value="Admin">Admin</option>
-                            <option value="Operador">Operador</option>
-                          </select>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <button style={styles.primaryButton} type="submit" disabled={saving}>
+                {saving ? "Guardando..." : "Crear usuario"}
+              </button>
+            </form>
           </div>
         )}
+
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
+
+          {loading ? (
+            <p>Cargando usuarios...</p>
+          ) : (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Nombre</th>
+                    <th style={styles.th}>Correo</th>
+                    <th style={styles.th}>Rol</th>
+                    <th style={styles.th}>Estado</th>
+                    {isAdmin && <th style={styles.th}>Acciones</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((item) => {
+                    const isCurrentUser = user?.id === item.id;
+
+                    return (
+                      <tr key={item.id}>
+                        <td style={styles.td}>{item.fullName}</td>
+                        <td style={styles.td}>{item.email}</td>
+                        <td style={styles.td}>{item.role}</td>
+
+                        <td style={styles.td}>
+                          <span
+                            style={{
+                              ...styles.badge,
+                              ...(item.isActive ? styles.badgeActive : styles.badgeInactive),
+                            }}
+                          >
+                            {item.isActive ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+
+                        {isAdmin && (
+                          <td style={styles.td}>
+                            <div style={styles.actions}>
+                              <button
+                                style={styles.secondaryButton}
+                                onClick={() => handleToggleStatus(item)}
+                                disabled={isCurrentUser}
+                              >
+                                {item.isActive ? "Inactivar" : "Activar"}
+                              </button>
+
+                              <select
+                                style={styles.actionSelect}
+                                value={item.role}
+                                onChange={(e) =>
+                                  handleRoleChange(item, e.target.value)
+                                }
+                                disabled={isCurrentUser}
+                              >
+                                <option value="Admin">Admin</option>
+                                <option value="Operador">Operador</option>
+                              </select>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 
@@ -234,8 +275,7 @@ const styles = {
   page: {
     fontFamily: "Arial",
     padding: "24px",
-    maxWidth: "1100px",
-    margin: "0 auto",
+    maxWidth: "1200px",
   },
   header: {
     marginBottom: "20px",
@@ -340,6 +380,13 @@ const styles = {
     backgroundColor: "#fdeaea",
     color: "#b71c1c",
   },
+  successBox: {
+  marginBottom: "16px",
+  padding: "12px",
+  borderRadius: "8px",
+  backgroundColor: "#e7f6ea",
+  color: "#1b5e20",
+},
 };
 
 export default UsersPage;

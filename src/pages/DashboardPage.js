@@ -1,24 +1,44 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import AdminLayout from "../components/AdminLayout";
 import { useAuth } from "../auth/AuthContext";
 
 function DashboardPage() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>Dashboard AgroTrace</h1>
-      <p><strong>Usuario:</strong> {user?.fullName}</p>
-      <p><strong>Email:</strong> {user?.email}</p>
-      <p><strong>Tenant:</strong> {user?.tenantCode}</p>
-      <p><strong>Rol:</strong> {user?.role}</p>
+    <AdminLayout>
+      <div style={styles.grid}>
+        <div style={styles.card}>
+          <h3>Bienvenido</h3>
+          <p>{user?.fullName}</p>
+        </div>
 
-      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
-        <Link to="/users">Ir a usuarios</Link>
-        <button onClick={signOut}>Cerrar sesión</button>
+        <div style={styles.card}>
+          <h3>Rol</h3>
+          <p>{user?.role}</p>
+        </div>
+
+        <div style={styles.card}>
+          <h3>Empresa</h3>
+          <p>{user?.tenantCode}</p>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
+
+const styles = {
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "20px",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "20px",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+  },
+};
 
 export default DashboardPage;
