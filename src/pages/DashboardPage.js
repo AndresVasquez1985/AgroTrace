@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 function DashboardPage() {
@@ -10,8 +11,12 @@ function DashboardPage() {
       <p><strong>Usuario:</strong> {user?.fullName}</p>
       <p><strong>Email:</strong> {user?.email}</p>
       <p><strong>Tenant:</strong> {user?.tenantCode}</p>
+      <p><strong>Rol:</strong> {user?.role}</p>
 
-      <button onClick={signOut}>Cerrar sesión</button>
+      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+        <Link to="/users">Ir a usuarios</Link>
+        <button onClick={signOut}>Cerrar sesión</button>
+      </div>
     </div>
   );
 }
