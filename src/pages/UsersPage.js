@@ -449,6 +449,7 @@ return (
     </div>
   </AdminLayout>
 );
+}
 
 const styles = {
   page: {
