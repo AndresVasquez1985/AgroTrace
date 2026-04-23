@@ -7,10 +7,16 @@ import UsersPage from "./pages/UsersPage";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 function App() {
+  const token = localStorage.getItem("token");
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/login"
+          element={token ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+        />
+
         <Route
           path="/dashboard"
           element={
@@ -19,6 +25,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/users"
           element={
@@ -27,8 +34,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route path="/" element={<PublicTracePage />} />
         <Route path="/:codigoQr" element={<PublicTracePage />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

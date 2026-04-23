@@ -12,41 +12,43 @@ function PublicTracePage() {
 
   const baseUrl = process.env.REACT_APP_PUBLIC_URL || window.location.origin;
   const apiUrl = process.env.REACT_APP_API_URL;
+  const token = localStorage.getItem("token");
 
-  const consultar = useCallback(async (codigo) => {
-    try {
-      setLoading(true);
-      codigo = codigo.replace(baseUrl + "/", "");
+  const consultar = useCallback(
+    async (codigo) => {
+      try {
+        setLoading(true);
+        codigo = codigo.replace(baseUrl + "/", "");
 
-      const response = await fetch(
-        `${apiUrl}/api/Lotes/trazabilidad/${codigo}`
-      );
+        const response = await fetch(
+          `${apiUrl}/api/Lotes/trazabilidad/${codigo}`
+        );
 
-      console.log("Status:", response.status);
+        if (!response.ok) {
+          alert("QR no encontrado o error en API");
+          setLoading(false);
+          return;
+        }
 
-      if (!response.ok) {
-        alert("QR no encontrado o error en API");
+        const text = await response.text();
+
+        if (!text) {
+          alert("Respuesta vacía del servidor");
+          setLoading(false);
+          return;
+        }
+
+        const result = JSON.parse(text);
+        setData(result);
+      } catch (error) {
+        console.error("ERROR COMPLETO:", error);
+        alert("Error consultando trazabilidad");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const text = await response.text();
-
-      if (!text) {
-        alert("Respuesta vacía del servidor");
-        setLoading(false);
-        return;
-      }
-
-      const result = JSON.parse(text);
-      setData(result);
-    } catch (error) {
-      console.error("ERROR COMPLETO:", error);
-      alert("Error consultando trazabilidad");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiUrl, baseUrl]);
+    },
+    [apiUrl, baseUrl]
+  );
 
   const descargarQR = () => {
     const canvas = qrRef.current.querySelector("canvas");
@@ -83,7 +85,7 @@ function PublicTracePage() {
   useEffect(() => {
     const path = window.location.pathname.replace("/", "");
 
-    if (path && !path.startsWith("login") && !path.startsWith("dashboard")) {
+    if (path && !path.startsWith("login") && !path.startsWith("dashboard") && !path.startsWith("users")) {
       setQr(path);
       consultar(path);
     }
@@ -91,6 +93,17 @@ function PublicTracePage() {
 
   return (
     <div style={styles.container}>
+      <div style={styles.topBar}>
+        <button
+          style={styles.loginButton}
+          onClick={() =>
+            (window.location.href = token ? "/dashboard" : "/login")
+          }
+        >
+          {token ? "Ir al panel" : "Iniciar sesión"}
+        </button>
+      </div>
+
       <h1 style={styles.title}>AgroTrace ☕</h1>
 
       <button style={styles.button} onClick={() => setScan(true)}>
@@ -125,10 +138,7 @@ function PublicTracePage() {
           <h2>📦 Código QR</h2>
 
           <div ref={qrRef}>
-            <QRCodeCanvas
-              value={`${baseUrl}/${data.lote.codigoQR}`}
-              size={200}
-            />
+            <QRCodeCanvas value={`${baseUrl}/${data.lote.codigoQR}`} size={200} />
           </div>
 
           <button style={styles.button} onClick={descargarQR}>
@@ -136,7 +146,9 @@ function PublicTracePage() {
           </button>
 
           <h2>☕ Lote</h2>
-          <p><strong>QR:</strong> {data.lote.codigoQR}</p>
+          <p>
+            <strong>QR:</strong> {data.lote.codigoQR}
+          </p>
 
           <h2>🌄 Finca</h2>
           <p>{data.finca.nombre}</p>
@@ -161,28 +173,19 @@ function PublicTracePage() {
 const styles = {
   container: {
     fontFamily: "Arial",
-    maxWidth: "400px",
+    maxWidth: "700px",
     margin: "auto",
     padding: "20px",
     textAlign: "center",
   },
-  title: {
-    color: "#2E7D32",
-  },
-  subtitle: {
-    marginTop: "20px",
-  },
-  input: {
+  topBar: {
     width: "100%",
-    padding: "10px",
-    marginTop: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: "10px",
   },
-  button: {
-    marginTop: "10px",
-    padding: "10px",
-    width: "100%",
+  loginButton: {
+    padding: "10px 14px",
     borderRadius: "8px",
     border: "none",
     backgroundColor: "#2E7D32",
@@ -190,10 +193,40 @@ const styles = {
     fontWeight: "bold",
     cursor: "pointer",
   },
+  title: {
+    color: "#2E7D32",
+    fontSize: "56px",
+    marginBottom: "30px",
+  },
+  subtitle: {
+    marginTop: "30px",
+    fontSize: "18px",
+  },
+  input: {
+    width: "100%",
+    padding: "16px",
+    marginTop: "10px",
+    borderRadius: "12px",
+    border: "1px solid #ccc",
+    fontSize: "18px",
+    boxSizing: "border-box",
+  },
+  button: {
+    marginTop: "14px",
+    padding: "16px",
+    width: "100%",
+    borderRadius: "12px",
+    border: "none",
+    backgroundColor: "#2E7D32",
+    color: "white",
+    fontWeight: "bold",
+    cursor: "pointer",
+    fontSize: "18px",
+  },
   card: {
-    marginTop: "20px",
-    padding: "15px",
-    borderRadius: "10px",
+    marginTop: "24px",
+    padding: "20px",
+    borderRadius: "14px",
     backgroundColor: "#f5f5f5",
     textAlign: "left",
   },
@@ -217,12 +250,15 @@ const styles = {
 
 const styleSheet = document.styleSheets[0];
 if (styleSheet) {
-  styleSheet.insertRule(`
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  `, styleSheet.cssRules.length);
+  styleSheet.insertRule(
+    `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `,
+    styleSheet.cssRules.length
+  );
 }
 
 export default PublicTracePage;
