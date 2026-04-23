@@ -19,6 +19,9 @@ function UsersPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("Todos");
+  const [statusFilter, setStatusFilter] = useState("Todos");
 
   const [form, setForm] = useState({
     fullName: "",
@@ -193,207 +196,259 @@ const closeConfirmModal = () => {
   });
 };
 
-  return (
-    <AdminLayout>
-      <div style={styles.page}>
-        <div style={styles.pageHeader}>
-          <div>
-            <h1 style={styles.title}>Gestión de usuarios</h1>
-            <p style={styles.subtitle}>
-              Administra usuarios, roles y estado de acceso.
-            </p>
-          </div>
+const filteredUsers = users.filter((item) => {
+  const matchesSearch =
+    item.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-          {isAdmin && (
-            <button style={styles.primaryButton} onClick={handleOpenCreateModal}>
-              + Crear usuario
-            </button>
-          )}
+  const matchesRole =
+    roleFilter === "Todos" ? true : item.role === roleFilter;
+
+  const matchesStatus =
+    statusFilter === "Todos"
+      ? true
+      : statusFilter === "Activo"
+      ? item.isActive
+      : !item.isActive;
+
+  return matchesSearch && matchesRole && matchesStatus;
+});
+
+return (
+  <AdminLayout>
+    <div style={styles.page}>
+      <div style={styles.pageHeader}>
+        <div>
+          <h1 style={styles.title}>Gestión de usuarios</h1>
+          <p style={styles.subtitle}>
+            Administra usuarios, roles y estado de acceso.
+          </p>
         </div>
 
-        {error && <div style={styles.errorBox}>{error}</div>}
-        {success && <div style={styles.successBox}>{success}</div>}
+        {isAdmin && (
+          <button style={styles.primaryButton} onClick={handleOpenCreateModal}>
+            + Crear usuario
+          </button>
+        )}
+      </div>
 
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
-            <span style={styles.counter}>{users.length} registros</span>
+      {error && <div style={styles.errorBox}>{error}</div>}
+      {success && <div style={styles.successBox}>{success}</div>}
+
+      <div style={styles.card}>
+        <div style={styles.cardHeader}>
+          <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
+          <span style={styles.counter}>
+            {filteredUsers.length} de {users.length} registros
+          </span>
+        </div>
+
+        <div style={styles.filtersRow}>
+          <input
+            style={styles.filterInput}
+            type="text"
+            placeholder="Buscar por nombre o correo"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            style={styles.filterSelect}
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            <option value="Todos">Todos los roles</option>
+            <option value="Admin">Admin</option>
+            <option value="Operador">Operador</option>
+          </select>
+
+          <select
+            style={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="Todos">Todos los estados</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <p>Cargando usuarios...</p>
+        ) : filteredUsers.length === 0 ? (
+          <div style={styles.emptyState}>
+            No se encontraron usuarios con los filtros aplicados.
           </div>
+        ) : (
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Nombre</th>
+                  <th style={styles.th}>Correo</th>
+                  <th style={styles.th}>Rol</th>
+                  <th style={styles.th}>Estado</th>
+                  {isAdmin && <th style={styles.th}>Acciones</th>}
+                </tr>
+              </thead>
 
-          {loading ? (
-            <p>Cargando usuarios...</p>
-          ) : (
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Nombre</th>
-                    <th style={styles.th}>Correo</th>
-                    <th style={styles.th}>Rol</th>
-                    <th style={styles.th}>Estado</th>
-                    {isAdmin && <th style={styles.th}>Acciones</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((item) => {
-                    const isCurrentUser = user?.id === item.id;
+              <tbody>
+                {filteredUsers.map((item) => {
+                  const isCurrentUser = user?.id === item.id;
 
-                    return (
-                      <tr key={item.id}>
+                  return (
+                    <tr key={item.id}>
+                      <td style={styles.td}>
+                        <div style={styles.nameCell}>
+                          <span>{item.fullName}</span>
+                          {isCurrentUser && (
+                            <span style={styles.meBadge}>Tú</span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td style={styles.td}>{item.email}</td>
+
+                      <td style={styles.td}>
+                        <span style={styles.roleBadge}>{item.role}</span>
+                      </td>
+
+                      <td style={styles.td}>
+                        <span
+                          style={{
+                            ...styles.statusBadge,
+                            ...(item.isActive
+                              ? styles.statusActive
+                              : styles.statusInactive),
+                          }}
+                        >
+                          {item.isActive ? "Activo" : "Inactivo"}
+                        </span>
+                      </td>
+
+                      {isAdmin && (
                         <td style={styles.td}>
-                          <div style={styles.nameCell}>
-                            <span>{item.fullName}</span>
-                            {isCurrentUser && (
-                              <span style={styles.meBadge}>Tú</span>
-                            )}
+                          <div style={styles.actions}>
+                            <button
+                              style={{
+                                ...styles.secondaryButton,
+                                ...(isCurrentUser ? styles.disabledButton : {}),
+                              }}
+                              onClick={() => handleToggleStatus(item)}
+                              disabled={isCurrentUser}
+                            >
+                              {item.isActive ? "Inactivar" : "Activar"}
+                            </button>
+
+                            <select
+                              style={styles.actionSelect}
+                              value={item.role}
+                              onChange={(e) =>
+                                handleRoleChange(item, e.target.value)
+                              }
+                              disabled={isCurrentUser}
+                            >
+                              <option value="Admin">Admin</option>
+                              <option value="Operador">Operador</option>
+                            </select>
                           </div>
                         </td>
-
-                        <td style={styles.td}>{item.email}</td>
-                        <td style={styles.td}>
-                          <span style={styles.roleBadge}>{item.role}</span>
-                        </td>
-
-                        <td style={styles.td}>
-                          <span
-                            style={{
-                              ...styles.statusBadge,
-                              ...(item.isActive
-                                ? styles.statusActive
-                                : styles.statusInactive),
-                            }}
-                          >
-                            {item.isActive ? "Activo" : "Inactivo"}
-                          </span>
-                        </td>
-
-                        {isAdmin && (
-                          <td style={styles.td}>
-                            <div style={styles.actions}>
-                              <button
-                                style={{
-                                  ...styles.secondaryButton,
-                                  ...(isCurrentUser ? styles.disabledButton : {}),
-                                }}
-                                onClick={() => handleToggleStatus(item)}
-                                disabled={isCurrentUser}
-                              >
-                                {item.isActive ? "Inactivar" : "Activar"}
-                              </button>
-
-                              <select
-                                style={styles.actionSelect}
-                                value={item.role}
-                                onChange={(e) =>
-                                  handleRoleChange(item, e.target.value)
-                                }
-                                disabled={isCurrentUser}
-                              >
-                                <option value="Admin">Admin</option>
-                                <option value="Operador">Operador</option>
-                              </select>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <Modal
-          isOpen={isCreateModalOpen}
-          title="Crear nuevo usuario"
-          onClose={handleCloseCreateModal}
-        >
-          <form onSubmit={handleCreateUser} style={styles.formGrid}>
-            <div style={styles.field}>
-              <label style={styles.label}>Nombre completo</label>
-              <input
-                style={styles.input}
-                type="text"
-                name="fullName"
-                value={form.fullName}
-                onChange={handleChange}
-                placeholder="Ej: Juan Pérez"
-                required
-              />
-            </div>
-
-            <div style={styles.field}>
-              <label style={styles.label}>Correo</label>
-              <input
-                style={styles.input}
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Ej: juan@agrotrace.com"
-                required
-              />
-            </div>
-
-            <div style={styles.field}>
-              <label style={styles.label}>Contraseña</label>
-              <input
-                style={styles.input}
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Mínimo 8 caracteres"
-                required
-              />
-            </div>
-
-            <div style={styles.field}>
-              <label style={styles.label}>Rol</label>
-              <select
-                style={styles.input}
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-              >
-                <option value="Admin">Admin</option>
-                <option value="Operador">Operador</option>
-              </select>
-            </div>
-
-            <div style={styles.modalActions}>
-              <button
-                type="button"
-                style={styles.cancelButton}
-                onClick={handleCloseCreateModal}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="submit"
-                style={styles.primaryButton}
-                disabled={saving}
-              >
-                {saving ? "Guardando..." : "Guardar usuario"}
-              </button>
-            </div>
-          </form>
-        </Modal>
-        <ConfirmModal
-          isOpen={confirmModal.isOpen}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          confirmText={confirmModal.confirmText}
-          variant={confirmModal.variant}
-          onClose={closeConfirmModal}
-          onConfirm={confirmModal.onConfirm}
-        />
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-    </AdminLayout>
-  );
-}
+
+      <Modal
+        isOpen={isCreateModalOpen}
+        title="Crear nuevo usuario"
+        onClose={handleCloseCreateModal}
+      >
+        <form onSubmit={handleCreateUser} style={styles.formGrid}>
+          <div style={styles.field}>
+            <label style={styles.label}>Nombre completo</label>
+            <input
+              style={styles.input}
+              type="text"
+              name="fullName"
+              value={form.fullName}
+              onChange={handleChange}
+              placeholder="Ej: Juan Pérez"
+              required
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Correo</label>
+            <input
+              style={styles.input}
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Ej: juan@agrotrace.com"
+              required
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Contraseña</label>
+            <input
+              style={styles.input}
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Mínimo 8 caracteres"
+              required
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Rol</label>
+            <select
+              style={styles.input}
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+            >
+              <option value="Admin">Admin</option>
+              <option value="Operador">Operador</option>
+            </select>
+          </div>
+
+          <div style={styles.modalActions}>
+            <button
+              type="button"
+              style={styles.cancelButton}
+              onClick={handleCloseCreateModal}
+            >
+              Cancelar
+            </button>
+
+            <button type="submit" style={styles.primaryButton} disabled={saving}>
+              {saving ? "Guardando..." : "Guardar usuario"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        variant={confirmModal.variant}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
+    </div>
+  </AdminLayout>
+);
 
 const styles = {
   page: {
@@ -582,6 +637,41 @@ const styles = {
     backgroundColor: "#e7f6ea",
     color: "#1b5e20",
   },
+  filtersRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "12px",
+    marginBottom: "18px",
+  },
+
+  filterInput: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d6ddd8",
+    boxSizing: "border-box",
+    fontSize: "14px",
+  },
+
+filterSelect: {
+  width: "100%",
+  padding: "12px",
+  borderRadius: "10px",
+  border: "1px solid #d6ddd8",
+  boxSizing: "border-box",
+  fontSize: "14px",
+  backgroundColor: "#fff",
+},
+
+emptyState: {
+  padding: "24px",
+  textAlign: "center",
+  color: "#6b756f",
+  backgroundColor: "#f8fbf9",
+  borderRadius: "12px",
+  border: "1px dashed #d6ddd8",
+},
+
 };
 
 export default UsersPage;
