@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "../components/AdminLayout";
 import Modal from "../components/Modal";
+import ConfirmModal from "../components/ConfirmModal";
 import {
   createUser,
   getUsers,
@@ -100,51 +101,97 @@ function UsersPage() {
     }
   };
 
-  const handleToggleStatus = async (item) => {
-    const actionText = item.isActive ? "inactivar" : "activar";
-    const confirmed = window.confirm(
-      `¿Deseas ${actionText} al usuario ${item.fullName}?`
-    );
+  const handleToggleStatus = (item) => {
+  const actionText = item.isActive ? "inactivar" : "activar";
 
-    if (!confirmed) return;
+  openConfirmModal({
+    title: `${item.isActive ? "Inactivar" : "Activar"} usuario`,
+    message: `¿Deseas ${actionText} al usuario ${item.fullName}?`,
+    confirmText: item.isActive ? "Inactivar" : "Activar",
+    variant: item.isActive ? "danger" : "warning",
+    onConfirm: async () => {
+      try {
+        setError("");
+        setSuccess("");
 
-    try {
-      setError("");
-      setSuccess("");
+        await updateUserStatus(item.id, !item.isActive);
 
-      await updateUserStatus(item.id, !item.isActive);
+        setSuccess(
+          `Usuario ${item.isActive ? "inactivado" : "activado"} correctamente.`
+        );
 
-      setSuccess(
-        `Usuario ${item.isActive ? "inactivado" : "activado"} correctamente.`
-      );
+        closeConfirmModal();
+        await loadUsers();
+      } catch (err) {
+        setError(err.message || "No fue posible actualizar el estado.");
+        closeConfirmModal();
+      }
+    },
+  });
+};
 
-      await loadUsers();
-    } catch (err) {
-      setError(err.message || "No fue posible actualizar el estado.");
-    }
-  };
+const handleRoleChange = (item, role) => {
+  if (item.role === role) return;
 
-  const handleRoleChange = async (item, role) => {
-    if (item.role === role) return;
+  openConfirmModal({
+    title: "Cambiar rol",
+    message: `¿Deseas cambiar el rol de ${item.fullName} a ${role}?`,
+    confirmText: "Cambiar rol",
+    variant: "warning",
+    onConfirm: async () => {
+      try {
+        setError("");
+        setSuccess("");
 
-    const confirmed = window.confirm(
-      `¿Deseas cambiar el rol de ${item.fullName} a ${role}?`
-    );
+        await updateUserRole(item.id, role);
 
-    if (!confirmed) return;
+        setSuccess("Rol actualizado correctamente.");
+        closeConfirmModal();
+        await loadUsers();
+      } catch (err) {
+        setError(err.message || "No fue posible actualizar el rol.");
+        closeConfirmModal();
+      }
+    },
+  });
+};
 
-    try {
-      setError("");
-      setSuccess("");
+  const [confirmModal, setConfirmModal] = useState({
+  isOpen: false,
+  title: "",
+  message: "",
+  confirmText: "Confirmar",
+  variant: "warning",
+  onConfirm: null,
+  });
 
-      await updateUserRole(item.id, role);
+  const openConfirmModal = ({
+  title,
+  message,
+  confirmText = "Confirmar",
+  variant = "warning",
+  onConfirm,
+}) => {
+  setConfirmModal({
+    isOpen: true,
+    title,
+    message,
+    confirmText,
+    variant,
+    onConfirm,
+  });
+};
 
-      setSuccess("Rol actualizado correctamente.");
-      await loadUsers();
-    } catch (err) {
-      setError(err.message || "No fue posible actualizar el rol.");
-    }
-  };
+const closeConfirmModal = () => {
+  setConfirmModal({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirmar",
+    variant: "warning",
+    onConfirm: null,
+  });
+};
 
   return (
     <AdminLayout>
@@ -334,6 +381,15 @@ function UsersPage() {
             </div>
           </form>
         </Modal>
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          variant={confirmModal.variant}
+          onClose={closeConfirmModal}
+          onConfirm={confirmModal.onConfirm}
+        />
       </div>
     </AdminLayout>
   );
