@@ -19,20 +19,33 @@ function UsersPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("Todos");
   const [statusFilter, setStatusFilter] = useState("Todos");
+
+  const [sortConfig, setSortConfig] = useState({
+    key: "fullName",
+    direction: "asc",
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirmar",
+    variant: "warning",
+    onConfirm: null,
+  });
 
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     password: "",
     role: "Operador",
-  });
-
-  const [sortConfig, setSortConfig] = useState({
-    key: "fullName",
-    direction: "asc",
   });
 
   const isAdmin = user?.role === "Admin";
@@ -53,6 +66,80 @@ function UsersPage() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, statusFilter, pageSize]);
+
+  const filteredUsers = users.filter((item) => {
+    const search = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      item.fullName.toLowerCase().includes(search) ||
+      item.email.toLowerCase().includes(search);
+
+    const matchesRole =
+      roleFilter === "Todos" ? true : item.role === roleFilter;
+
+    const matchesStatus =
+      statusFilter === "Todos"
+        ? true
+        : statusFilter === "Activo"
+        ? item.isActive
+        : !item.isActive;
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    let valueA = a[sortConfig.key];
+    let valueB = b[sortConfig.key];
+
+    if (sortConfig.key === "isActive") {
+      valueA = a.isActive ? 1 : 0;
+      valueB = b.isActive ? 1 : 0;
+    }
+
+    if (typeof valueA === "string") valueA = valueA.toLowerCase();
+    if (typeof valueB === "string") valueB = valueB.toLowerCase();
+
+    if (valueA < valueB) return sortConfig.direction === "asc" ? -1 : 1;
+    if (valueA > valueB) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedUsers.length / pageSize) || 1;
+
+  const paginatedUsers = sortedUsers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const startRecord =
+    sortedUsers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+
+  const endRecord = Math.min(currentPage * pageSize, sortedUsers.length);
+
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return {
+        key,
+        direction: "asc",
+      };
+    });
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return "↕";
+    return sortConfig.direction === "asc" ? "↑" : "↓";
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -84,6 +171,34 @@ function UsersPage() {
     resetForm();
   };
 
+  const openConfirmModal = ({
+    title,
+    message,
+    confirmText = "Confirmar",
+    variant = "warning",
+    onConfirm,
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      variant,
+      onConfirm,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      title: "",
+      message: "",
+      confirmText: "Confirmar",
+      variant: "warning",
+      onConfirm: null,
+    });
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
 
@@ -110,411 +225,367 @@ function UsersPage() {
   };
 
   const handleToggleStatus = (item) => {
-  const actionText = item.isActive ? "inactivar" : "activar";
+    const actionText = item.isActive ? "inactivar" : "activar";
 
-  openConfirmModal({
-    title: `${item.isActive ? "Inactivar" : "Activar"} usuario`,
-    message: `¿Deseas ${actionText} al usuario ${item.fullName}?`,
-    confirmText: item.isActive ? "Inactivar" : "Activar",
-    variant: item.isActive ? "danger" : "warning",
-    onConfirm: async () => {
-      try {
-        setError("");
-        setSuccess("");
+    openConfirmModal({
+      title: `${item.isActive ? "Inactivar" : "Activar"} usuario`,
+      message: `¿Deseas ${actionText} al usuario ${item.fullName}?`,
+      confirmText: item.isActive ? "Inactivar" : "Activar",
+      variant: item.isActive ? "danger" : "warning",
+      onConfirm: async () => {
+        try {
+          setError("");
+          setSuccess("");
 
-        await updateUserStatus(item.id, !item.isActive);
+          await updateUserStatus(item.id, !item.isActive);
 
-        setSuccess(
-          `Usuario ${item.isActive ? "inactivado" : "activado"} correctamente.`
-        );
+          setSuccess(
+            `Usuario ${item.isActive ? "inactivado" : "activado"} correctamente.`
+          );
 
-        closeConfirmModal();
-        await loadUsers();
-      } catch (err) {
-        setError(err.message || "No fue posible actualizar el estado.");
-        closeConfirmModal();
-      }
-    },
-  });
-};
+          closeConfirmModal();
+          await loadUsers();
+        } catch (err) {
+          setError(err.message || "No fue posible actualizar el estado.");
+          closeConfirmModal();
+        }
+      },
+    });
+  };
 
-const handleRoleChange = (item, role) => {
-  if (item.role === role) return;
+  const handleRoleChange = (item, role) => {
+    if (item.role === role) return;
 
-  openConfirmModal({
-    title: "Cambiar rol",
-    message: `¿Deseas cambiar el rol de ${item.fullName} a ${role}?`,
-    confirmText: "Cambiar rol",
-    variant: "warning",
-    onConfirm: async () => {
-      try {
-        setError("");
-        setSuccess("");
+    openConfirmModal({
+      title: "Cambiar rol",
+      message: `¿Deseas cambiar el rol de ${item.fullName} a ${role}?`,
+      confirmText: "Cambiar rol",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          setError("");
+          setSuccess("");
 
-        await updateUserRole(item.id, role);
+          await updateUserRole(item.id, role);
 
-        setSuccess("Rol actualizado correctamente.");
-        closeConfirmModal();
-        await loadUsers();
-      } catch (err) {
-        setError(err.message || "No fue posible actualizar el rol.");
-        closeConfirmModal();
-      }
-    },
-  });
-};
+          setSuccess("Rol actualizado correctamente.");
+          closeConfirmModal();
+          await loadUsers();
+        } catch (err) {
+          setError(err.message || "No fue posible actualizar el rol.");
+          closeConfirmModal();
+        }
+      },
+    });
+  };
 
-  const [confirmModal, setConfirmModal] = useState({
-  isOpen: false,
-  title: "",
-  message: "",
-  confirmText: "Confirmar",
-  variant: "warning",
-  onConfirm: null,
-  });
-
-  const openConfirmModal = ({
-  title,
-  message,
-  confirmText = "Confirmar",
-  variant = "warning",
-  onConfirm,
-}) => {
-  setConfirmModal({
-    isOpen: true,
-    title,
-    message,
-    confirmText,
-    variant,
-    onConfirm,
-  });
-};
-
-const closeConfirmModal = () => {
-  setConfirmModal({
-    isOpen: false,
-    title: "",
-    message: "",
-    confirmText: "Confirmar",
-    variant: "warning",
-    onConfirm: null,
-  });
-};
-
-const filteredUsers = users.filter((item) => {
-  const matchesSearch =
-    item.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-  const matchesRole =
-    roleFilter === "Todos" ? true : item.role === roleFilter;
-
-  const matchesStatus =
-    statusFilter === "Todos"
-      ? true
-      : statusFilter === "Activo"
-      ? item.isActive
-      : !item.isActive;
-
-  return matchesSearch && matchesRole && matchesStatus;
-});
-
-const sortedUsers = [...filteredUsers].sort((a, b) => {
-  let valueA = a[sortConfig.key];
-  let valueB = b[sortConfig.key];
-
-  if (sortConfig.key === "isActive") {
-    valueA = a.isActive ? 1 : 0;
-    valueB = b.isActive ? 1 : 0;
-  }
-
-  if (typeof valueA === "string") {
-    valueA = valueA.toLowerCase();
-  }
-
-  if (typeof valueB === "string") {
-    valueB = valueB.toLowerCase();
-  }
-
-  if (valueA < valueB) {
-    return sortConfig.direction === "asc" ? -1 : 1;
-  }
-
-  if (valueA > valueB) {
-    return sortConfig.direction === "asc" ? 1 : -1;
-  }
-
-  return 0;
-});
-
-const handleSort = (key) => {
-  setSortConfig((prev) => {
-    if (prev.key === key) {
-      return {
-        key,
-        direction: prev.direction === "asc" ? "desc" : "asc",
-      };
-    }
-
-    return {
-      key,
-      direction: "asc",
-    };
-  });
-};
-
-const getSortIcon = (key) => {
-  if (sortConfig.key !== key) return "↕";
-  return sortConfig.direction === "asc" ? "↑" : "↓";
-};
-
-return (
-  <AdminLayout>
-    <div style={styles.page}>
-      <div style={styles.pageHeader}>
-        <div>
-          <h1 style={styles.title}>Gestión de usuarios</h1>
-          <p style={styles.subtitle}>
-            Administra usuarios, roles y estado de acceso.
-          </p>
-        </div>
-
-        {isAdmin && (
-          <button style={styles.primaryButton} onClick={handleOpenCreateModal}>
-            + Crear usuario
-          </button>
-        )}
-      </div>
-
-      {error && <div style={styles.errorBox}>{error}</div>}
-      {success && <div style={styles.successBox}>{success}</div>}
-
-      <div style={styles.card}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
-          <span style={styles.counter}>
-            {sortedUsers.length} de {users.length} registros
-          </span>
-        </div>
-
-        <div style={styles.filtersRow}>
-          <input
-            style={styles.filterInput}
-            type="text"
-            placeholder="Buscar por nombre o correo"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
-          <select
-            style={styles.filterSelect}
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-          >
-            <option value="Todos">Todos los roles</option>
-            <option value="Admin">Admin</option>
-            <option value="Operador">Operador</option>
-          </select>
-
-          <select
-            style={styles.filterSelect}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="Todos">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-
-        {loading ? (
-          <p>Cargando usuarios...</p>
-        ) : sortedUsers.length === 0 ? (
-          <div style={styles.emptyState}>
-            No se encontraron usuarios con los filtros aplicados.
+  return (
+    <AdminLayout>
+      <div style={styles.page}>
+        <div style={styles.pageHeader}>
+          <div>
+            <h1 style={styles.title}>Gestión de usuarios</h1>
+            <p style={styles.subtitle}>
+              Administra usuarios, roles y estado de acceso.
+            </p>
           </div>
-        ) : (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.sortableTh} onClick={() => handleSort("fullName")}>
-                    Nombre {getSortIcon("fullName")}
-                  </th>
 
-                  <th style={styles.sortableTh} onClick={() => handleSort("email")}>
-                    Correo {getSortIcon("email")}
-                  </th>
+          {isAdmin && (
+            <button style={styles.primaryButton} onClick={handleOpenCreateModal}>
+              + Crear usuario
+            </button>
+          )}
+        </div>
 
-                  <th style={styles.sortableTh} onClick={() => handleSort("role")}>
-                    Rol {getSortIcon("role")}
-                  </th>
+        {error && <div style={styles.errorBox}>{error}</div>}
+        {success && <div style={styles.successBox}>{success}</div>}
 
-                  <th style={styles.sortableTh} onClick={() => handleSort("isActive")}>
-                    Estado {getSortIcon("isActive")}
-                  </th>
-
-                  {isAdmin && <th style={styles.th}>Acciones</th>}
-                </tr>
-              </thead>
-
-              <tbody>
-                {sortedUsers.map((item) => {
-                  const isCurrentUser = user?.id === item.id;
-
-                  return (
-                    <tr key={item.id}>
-                      <td style={styles.td}>
-                        <div style={styles.nameCell}>
-                          <span>{item.fullName}</span>
-                          {isCurrentUser && (
-                            <span style={styles.meBadge}>Tú</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td style={styles.td}>{item.email}</td>
-
-                      <td style={styles.td}>
-                        <span style={styles.roleBadge}>{item.role}</span>
-                      </td>
-
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.statusBadge,
-                            ...(item.isActive
-                              ? styles.statusActive
-                              : styles.statusInactive),
-                          }}
-                        >
-                          {item.isActive ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
-
-                      {isAdmin && (
-                        <td style={styles.td}>
-                          <div style={styles.actions}>
-                            <button
-                              style={{
-                                ...styles.secondaryButton,
-                                ...(isCurrentUser ? styles.disabledButton : {}),
-                              }}
-                              onClick={() => handleToggleStatus(item)}
-                              disabled={isCurrentUser}
-                            >
-                              {item.isActive ? "Inactivar" : "Activar"}
-                            </button>
-
-                            <select
-                              style={styles.actionSelect}
-                              value={item.role}
-                              onChange={(e) =>
-                                handleRoleChange(item, e.target.value)
-                              }
-                              disabled={isCurrentUser}
-                            >
-                              <option value="Admin">Admin</option>
-                              <option value="Operador">Operador</option>
-                            </select>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
+            <span style={styles.counter}>
+              {sortedUsers.length} de {users.length} registros
+            </span>
           </div>
-        )}
-      </div>
 
-      <Modal
-        isOpen={isCreateModalOpen}
-        title="Crear nuevo usuario"
-        onClose={handleCloseCreateModal}
-      >
-        <form onSubmit={handleCreateUser} style={styles.formGrid}>
-          <div style={styles.field}>
-            <label style={styles.label}>Nombre completo</label>
+          <div style={styles.filtersRow}>
             <input
-              style={styles.input}
+              style={styles.filterInput}
               type="text"
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              placeholder="Ej: Juan Pérez"
-              required
+              placeholder="Buscar por nombre o correo"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Correo</label>
-            <input
-              style={styles.input}
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Ej: juan@agrotrace.com"
-              required
-            />
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Contraseña</label>
-            <input
-              style={styles.input}
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Mínimo 8 caracteres"
-              required
-            />
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Rol</label>
             <select
-              style={styles.input}
-              name="role"
-              value={form.role}
-              onChange={handleChange}
+              style={styles.filterSelect}
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
             >
+              <option value="Todos">Todos los roles</option>
               <option value="Admin">Admin</option>
               <option value="Operador">Operador</option>
             </select>
-          </div>
 
-          <div style={styles.modalActions}>
-            <button
-              type="button"
-              style={styles.cancelButton}
-              onClick={handleCloseCreateModal}
+            <select
+              style={styles.filterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
-              Cancelar
-            </button>
-
-            <button type="submit" style={styles.primaryButton} disabled={saving}>
-              {saving ? "Guardando..." : "Guardar usuario"}
-            </button>
+              <option value="Todos">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
           </div>
-        </form>
-      </Modal>
 
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        confirmText={confirmModal.confirmText}
-        variant={confirmModal.variant}
-        onClose={closeConfirmModal}
-        onConfirm={confirmModal.onConfirm}
-      />
-    </div>
-  </AdminLayout>
-);
+          {loading ? (
+            <p>Cargando usuarios...</p>
+          ) : sortedUsers.length === 0 ? (
+            <div style={styles.emptyState}>
+              No se encontraron usuarios con los filtros aplicados.
+            </div>
+          ) : (
+            <>
+              <div style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th
+                        style={styles.sortableTh}
+                        onClick={() => handleSort("fullName")}
+                      >
+                        Nombre {getSortIcon("fullName")}
+                      </th>
+                      <th
+                        style={styles.sortableTh}
+                        onClick={() => handleSort("email")}
+                      >
+                        Correo {getSortIcon("email")}
+                      </th>
+                      <th
+                        style={styles.sortableTh}
+                        onClick={() => handleSort("role")}
+                      >
+                        Rol {getSortIcon("role")}
+                      </th>
+                      <th
+                        style={styles.sortableTh}
+                        onClick={() => handleSort("isActive")}
+                      >
+                        Estado {getSortIcon("isActive")}
+                      </th>
+                      {isAdmin && <th style={styles.th}>Acciones</th>}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {paginatedUsers.map((item) => {
+                      const isCurrentUser = user?.id === item.id;
+
+                      return (
+                        <tr key={item.id}>
+                          <td style={styles.td}>
+                            <div style={styles.nameCell}>
+                              <span>{item.fullName}</span>
+                              {isCurrentUser && (
+                                <span style={styles.meBadge}>Tú</span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td style={styles.td}>{item.email}</td>
+
+                          <td style={styles.td}>
+                            <span style={styles.roleBadge}>{item.role}</span>
+                          </td>
+
+                          <td style={styles.td}>
+                            <span
+                              style={{
+                                ...styles.statusBadge,
+                                ...(item.isActive
+                                  ? styles.statusActive
+                                  : styles.statusInactive),
+                              }}
+                            >
+                              {item.isActive ? "Activo" : "Inactivo"}
+                            </span>
+                          </td>
+
+                          {isAdmin && (
+                            <td style={styles.td}>
+                              <div style={styles.actions}>
+                                <button
+                                  style={{
+                                    ...styles.secondaryButton,
+                                    ...(isCurrentUser
+                                      ? styles.disabledButton
+                                      : {}),
+                                  }}
+                                  onClick={() => handleToggleStatus(item)}
+                                  disabled={isCurrentUser}
+                                >
+                                  {item.isActive ? "Inactivar" : "Activar"}
+                                </button>
+
+                                <select
+                                  style={styles.actionSelect}
+                                  value={item.role}
+                                  onChange={(e) =>
+                                    handleRoleChange(item, e.target.value)
+                                  }
+                                  disabled={isCurrentUser}
+                                >
+                                  <option value="Admin">Admin</option>
+                                  <option value="Operador">Operador</option>
+                                </select>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={styles.pagination}>
+                <div style={styles.paginationInfo}>
+                  Mostrando {startRecord}-{endRecord} de {sortedUsers.length}{" "}
+                  registros
+                </div>
+
+                <div style={styles.paginationControls}>
+                  <select
+                    style={styles.pageSizeSelect}
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    <option value={5}>5 por página</option>
+                    <option value={10}>10 por página</option>
+                    <option value={20}>20 por página</option>
+                    <option value={50}>50 por página</option>
+                  </select>
+
+                  <button
+                    style={styles.secondaryButton}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+
+                  <span style={styles.pageIndicator}>
+                    Página {currentPage} de {totalPages}
+                  </span>
+
+                  <button
+                    style={styles.secondaryButton}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <Modal
+          isOpen={isCreateModalOpen}
+          title="Crear nuevo usuario"
+          onClose={handleCloseCreateModal}
+        >
+          <form onSubmit={handleCreateUser} style={styles.formGrid}>
+            <div style={styles.field}>
+              <label style={styles.label}>Nombre completo</label>
+              <input
+                style={styles.input}
+                type="text"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                placeholder="Ej: Juan Pérez"
+                required
+              />
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Correo</label>
+              <input
+                style={styles.input}
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="Ej: juan@agrotrace.com"
+                required
+              />
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Contraseña</label>
+              <input
+                style={styles.input}
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Mínimo 8 caracteres"
+                required
+              />
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Rol</label>
+              <select
+                style={styles.input}
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+              >
+                <option value="Admin">Admin</option>
+                <option value="Operador">Operador</option>
+              </select>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button
+                type="button"
+                style={styles.cancelButton}
+                onClick={handleCloseCreateModal}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                style={styles.primaryButton}
+                disabled={saving}
+              >
+                {saving ? "Guardando..." : "Guardar usuario"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          variant={confirmModal.variant}
+          onClose={closeConfirmModal}
+          onConfirm={confirmModal.onConfirm}
+        />
+      </div>
+    </AdminLayout>
+  );
 }
 
 const styles = {
@@ -563,6 +634,37 @@ const styles = {
     padding: "8px 12px",
     borderRadius: "20px",
   },
+  filtersRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "12px",
+    marginBottom: "18px",
+  },
+  filterInput: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d6ddd8",
+    boxSizing: "border-box",
+    fontSize: "14px",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d6ddd8",
+    boxSizing: "border-box",
+    fontSize: "14px",
+    backgroundColor: "#fff",
+  },
+  emptyState: {
+    padding: "24px",
+    textAlign: "center",
+    color: "#6b756f",
+    backgroundColor: "#f8fbf9",
+    borderRadius: "12px",
+    border: "1px dashed #d6ddd8",
+  },
   tableWrapper: {
     overflowX: "auto",
   },
@@ -576,6 +678,15 @@ const styles = {
     borderBottom: "1px solid #e8ece9",
     backgroundColor: "#f8fbf9",
     color: "#385046",
+  },
+  sortableTh: {
+    textAlign: "left",
+    padding: "14px 12px",
+    borderBottom: "1px solid #e8ece9",
+    backgroundColor: "#f8fbf9",
+    color: "#385046",
+    cursor: "pointer",
+    userSelect: "none",
   },
   td: {
     padding: "14px 12px",
@@ -690,6 +801,34 @@ const styles = {
     opacity: 0.6,
     cursor: "not-allowed",
   },
+  pagination: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "18px",
+    flexWrap: "wrap",
+  },
+  paginationInfo: {
+    color: "#6b756f",
+    fontSize: "14px",
+  },
+  paginationControls: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  pageSizeSelect: {
+    padding: "10px 12px",
+    borderRadius: "10px",
+    border: "1px solid #d6ddd8",
+    backgroundColor: "#fff",
+  },
+  pageIndicator: {
+    color: "#385046",
+    fontWeight: "bold",
+  },
   errorBox: {
     marginBottom: "16px",
     padding: "12px",
@@ -704,51 +843,6 @@ const styles = {
     backgroundColor: "#e7f6ea",
     color: "#1b5e20",
   },
-  filtersRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "12px",
-    marginBottom: "18px",
-  },
-
-  filterInput: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: "10px",
-    border: "1px solid #d6ddd8",
-    boxSizing: "border-box",
-    fontSize: "14px",
-  },
-
-filterSelect: {
-  width: "100%",
-  padding: "12px",
-  borderRadius: "10px",
-  border: "1px solid #d6ddd8",
-  boxSizing: "border-box",
-  fontSize: "14px",
-  backgroundColor: "#fff",
-},
-
-emptyState: {
-  padding: "24px",
-  textAlign: "center",
-  color: "#6b756f",
-  backgroundColor: "#f8fbf9",
-  borderRadius: "12px",
-  border: "1px dashed #d6ddd8",
-},
-
-sortableTh: {
-  textAlign: "left",
-  padding: "14px 12px",
-  borderBottom: "1px solid #e8ece9",
-  backgroundColor: "#f8fbf9",
-  color: "#385046",
-  cursor: "pointer",
-  userSelect: "none",
-},
-
 };
 
 export default UsersPage;
