@@ -30,6 +30,11 @@ function UsersPage() {
     role: "Operador",
   });
 
+  const [sortConfig, setSortConfig] = useState({
+    key: "fullName",
+    direction: "asc",
+  });
+
   const isAdmin = user?.role === "Admin";
 
   const loadUsers = async () => {
@@ -214,6 +219,55 @@ const filteredUsers = users.filter((item) => {
   return matchesSearch && matchesRole && matchesStatus;
 });
 
+const sortedUsers = [...filteredUsers].sort((a, b) => {
+  let valueA = a[sortConfig.key];
+  let valueB = b[sortConfig.key];
+
+  if (sortConfig.key === "isActive") {
+    valueA = a.isActive ? 1 : 0;
+    valueB = b.isActive ? 1 : 0;
+  }
+
+  if (typeof valueA === "string") {
+    valueA = valueA.toLowerCase();
+  }
+
+  if (typeof valueB === "string") {
+    valueB = valueB.toLowerCase();
+  }
+
+  if (valueA < valueB) {
+    return sortConfig.direction === "asc" ? -1 : 1;
+  }
+
+  if (valueA > valueB) {
+    return sortConfig.direction === "asc" ? 1 : -1;
+  }
+
+  return 0;
+});
+
+const handleSort = (key) => {
+  setSortConfig((prev) => {
+    if (prev.key === key) {
+      return {
+        key,
+        direction: prev.direction === "asc" ? "desc" : "asc",
+      };
+    }
+
+    return {
+      key,
+      direction: "asc",
+    };
+  });
+};
+
+const getSortIcon = (key) => {
+  if (sortConfig.key !== key) return "↕";
+  return sortConfig.direction === "asc" ? "↑" : "↓";
+};
+
 return (
   <AdminLayout>
     <div style={styles.page}>
@@ -239,7 +293,7 @@ return (
         <div style={styles.cardHeader}>
           <h2 style={styles.sectionTitle}>Usuarios registrados</h2>
           <span style={styles.counter}>
-            {filteredUsers.length} de {users.length} registros
+            {sortedUsers.length} de {users.length} registros
           </span>
         </div>
 
@@ -275,7 +329,7 @@ return (
 
         {loading ? (
           <p>Cargando usuarios...</p>
-        ) : filteredUsers.length === 0 ? (
+        ) : sortedUsers.length === 0 ? (
           <div style={styles.emptyState}>
             No se encontraron usuarios con los filtros aplicados.
           </div>
@@ -284,16 +338,28 @@ return (
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={styles.th}>Nombre</th>
-                  <th style={styles.th}>Correo</th>
-                  <th style={styles.th}>Rol</th>
-                  <th style={styles.th}>Estado</th>
+                  <th style={styles.sortableTh} onClick={() => handleSort("fullName")}>
+                    Nombre {getSortIcon("fullName")}
+                  </th>
+
+                  <th style={styles.sortableTh} onClick={() => handleSort("email")}>
+                    Correo {getSortIcon("email")}
+                  </th>
+
+                  <th style={styles.sortableTh} onClick={() => handleSort("role")}>
+                    Rol {getSortIcon("role")}
+                  </th>
+
+                  <th style={styles.sortableTh} onClick={() => handleSort("isActive")}>
+                    Estado {getSortIcon("isActive")}
+                  </th>
+
                   {isAdmin && <th style={styles.th}>Acciones</th>}
                 </tr>
               </thead>
 
               <tbody>
-                {filteredUsers.map((item) => {
+                {sortedUsers.map((item) => {
                   const isCurrentUser = user?.id === item.id;
 
                   return (
@@ -671,6 +737,16 @@ emptyState: {
   backgroundColor: "#f8fbf9",
   borderRadius: "12px",
   border: "1px dashed #d6ddd8",
+},
+
+sortableTh: {
+  textAlign: "left",
+  padding: "14px 12px",
+  borderBottom: "1px solid #e8ece9",
+  backgroundColor: "#f8fbf9",
+  color: "#385046",
+  cursor: "pointer",
+  userSelect: "none",
 },
 
 };
