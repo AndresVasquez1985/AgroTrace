@@ -1,12 +1,20 @@
 import React from "react";
 import { useAuth } from "../auth/AuthContext";
 
-function Topbar() {
+function Topbar({ onMenuClick }) {
   const { user, signOut } = useAuth();
 
   return (
     <header style={styles.topbar}>
-      <div>
+      <button
+        className="admin-menu-button"
+        style={styles.menuButton}
+        onClick={onMenuClick}
+      >
+        ☰
+      </button>
+
+      <div style={styles.userInfo}>
         <h2 style={styles.title}>Panel Administrativo</h2>
         <p style={styles.subtitle}>
           {user?.fullName} | {user?.role} | {user?.tenantCode}
@@ -25,12 +33,26 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "16px",
     padding: "18px 24px",
     backgroundColor: "#fff",
     borderBottom: "1px solid #e5e5e5",
     position: "sticky",
     top: 0,
     zIndex: 10,
+  },
+  menuButton: {
+    display: "none",
+    border: "none",
+    backgroundColor: "#edf5ee",
+    color: "#1f3d2f",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    fontSize: "20px",
+    cursor: "pointer",
+  },
+  userInfo: {
+    flex: 1,
   },
   title: {
     margin: 0,
@@ -50,6 +72,7 @@ const styles = {
     color: "#fff",
     fontWeight: "bold",
     cursor: "pointer",
+    whiteSpace: "nowrap",
   },
 };
 

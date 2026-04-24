@@ -1,0 +1,42 @@
+@media (max-width: 768px) {
+  .admin-sidebar {
+    position: fixed !important;
+    left: -260px !important;
+    top: 0 !important;
+    z-index: 999 !important;
+    transition: left 0.25s ease !important;
+  }
+
+  .admin-sidebar.open {
+    left: 0 !important;
+  }
+
+  .admin-mobile-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 28px !important;
+  }
+
+  .admin-desktop-brand {
+    display: none !important;
+  }
+
+  .admin-menu-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .admin-content {
+    padding: 16px !important;
+  }
+
+  .admin-topbar-title {
+    font-size: 18px !important;
+  }
+
+  .admin-topbar-subtitle {
+    font-size: 12px !important;
+  }
+}

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
 
   const menuItems = [
@@ -11,8 +11,23 @@ function Sidebar() {
   ];
 
   return (
-    <aside style={styles.sidebar}>
-      <div style={styles.brand}>AgroTrace</div>
+    <aside
+      className={`admin-sidebar ${isOpen ? "open" : ""}`}
+      style={{
+        ...styles.sidebar,
+        ...(isOpen ? styles.sidebarOpen : {}),
+      }}
+    >
+      <div className="admin-mobile-header" style={styles.mobileHeader}>
+        <div style={styles.brand}>AgroTrace</div>
+        <button style={styles.closeButton} onClick={onClose}>
+          ×
+        </button>
+      </div>
+
+      <div className="admin-desktop-brand" style={styles.desktopBrand}>
+        AgroTrace
+      </div>
 
       <nav style={styles.nav}>
         {menuItems.map((item) => {
@@ -22,6 +37,7 @@ function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={onClose}
               style={{
                 ...styles.link,
                 ...(isActive ? styles.linkActive : {}),
@@ -46,12 +62,28 @@ const styles = {
     flexDirection: "column",
     padding: "24px 16px",
     boxSizing: "border-box",
+    flexShrink: 0,
   },
-  brand: {
+  sidebarOpen: {},
+  desktopBrand: {
     fontSize: "28px",
     fontWeight: "bold",
     marginBottom: "32px",
     textAlign: "center",
+  },
+  mobileHeader: {
+    display: "none",
+  },
+  brand: {
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  closeButton: {
+    border: "none",
+    background: "transparent",
+    color: "#fff",
+    fontSize: "28px",
+    cursor: "pointer",
   },
   nav: {
     display: "flex",
