@@ -6,6 +6,7 @@ import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import ProductoresPage from "./pages/ProductoresPage";
+import FincasPage from "./pages/FincasPage";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -47,8 +48,17 @@ function App() {
           <ProtectedRoute>
             <ProductoresPage />
           </ProtectedRoute>
-        }
-      />
+          }
+        />
+
+        <Route
+          path="/fincas"
+          element={
+            <ProtectedRoute>
+              <FincasPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
