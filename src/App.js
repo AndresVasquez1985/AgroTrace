@@ -5,6 +5,7 @@ import PublicTracePage from "./pages/PublicTracePage";
 import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import ProductoresPage from "./pages/ProductoresPage";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -39,6 +40,15 @@ function App() {
         <Route path="/:codigoQr" element={<PublicTracePage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        <Route
+        path="/productores"
+        element={
+          <ProtectedRoute>
+            <ProductoresPage />
+          </ProtectedRoute>
+        }
+      />
       </Routes>
     </BrowserRouter>
   );

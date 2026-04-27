@@ -7,6 +7,7 @@ function Sidebar({ isOpen, onClose }) {
   const menuItems = [
     { label: "Dashboard", path: "/dashboard" },
     { label: "Usuarios", path: "/users" },
+    { label: "Productores", path: "/productores" },
     { label: "Trazabilidad", path: "/" },
   ];
 
