@@ -205,7 +205,7 @@ function FincasPage() {
           )}
         </div>
 
-        /*<Modal
+        {/* <Modal
           isOpen={isModalOpen}
           title="Crear finca"
           onClose={handleCloseModal}
@@ -273,7 +273,7 @@ function FincasPage() {
               </button>
             </div>
           </form>
-        </Modal>*/
+        </Modal> */}
       </div>
     </div>
   );
