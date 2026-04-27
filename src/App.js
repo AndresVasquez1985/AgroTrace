@@ -4,9 +4,9 @@ import LoginPage from "./pages/LoginPage";
 import PublicTracePage from "./pages/PublicTracePage";
 import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
-import ProtectedRoute from "./auth/ProtectedRoute";
 import ProductoresPage from "./pages/ProductoresPage";
 import FincasPage from "./pages/FincasPage";
+import ProtectedRoute from "./auth/ProtectedRoute";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -37,17 +37,12 @@ function App() {
           }
         />
 
-        <Route path="/" element={<PublicTracePage />} />
-        <Route path="/:codigoQr" element={<PublicTracePage />} />
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-
         <Route
-        path="/productores"
-        element={
-          <ProtectedRoute>
-            <ProductoresPage />
-          </ProtectedRoute>
+          path="/productores"
+          element={
+            <ProtectedRoute>
+              <ProductoresPage />
+            </ProtectedRoute>
           }
         />
 
@@ -59,6 +54,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/" element={<PublicTracePage />} />
+        <Route path="/:codigoQr" element={<PublicTracePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
