@@ -37,3 +37,36 @@ export async function createFinca(payload) {
 
   return data;
 }
+
+export async function updateFinca(id, payload) {
+  const response = await apiFetch(`/api/fincas/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+  const data = await parseResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data?.message || "Error actualizando finca.");
+  }
+
+  return data;
+}
+
+export async function deleteFinca(id) {
+  const response = await apiFetch(`/api/fincas/${id}`, {
+    method: "DELETE",
+  });
+
+  // DELETE normalmente viene sin body
+  if (!response.ok) {
+    let error = "Error eliminando finca.";
+    try {
+      const data = await parseResponse(response);
+      error = data?.message || error;
+    } catch {}
+    throw new Error(error);
+  }
+
+  return true;
+}

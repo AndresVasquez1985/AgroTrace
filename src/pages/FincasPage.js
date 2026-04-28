@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Modal from "../components/Modal";
 import { getProductores } from "../services/productorService";
-import { createFinca, getFincas } from "../services/fincaService";
+import { createFinca, getFincas, updateFinca, deleteFinca } from "../services/fincaService";
 import { useAuth } from "../auth/AuthContext";
 
 function FincasPage() {
@@ -17,6 +17,7 @@ function FincasPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFinca, setEditingFinca] = useState(null);
 
   const [form, setForm] = useState({
     nombre: "",
@@ -70,13 +71,26 @@ function FincasPage() {
     return productor?.nombre || "Sin productor";
   };
 
-  const handleOpenModal = () => {
+  const handleOpenCreateModal = () => {
+    setEditingFinca(null);
     setError("");
     setSuccess("");
     setForm({
-      nombre: "",
-      altitud: "",
-      productorId: "",
+        nombre: "",
+        altitud: "",
+        productorId: "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (finca) => {
+    setEditingFinca(finca);
+    setError("");
+    setSuccess("");
+    setForm({
+        nombre: finca.nombre || "",
+        altitud: finca.altitud || "",
+        productorId: finca.productorId || "",
     });
     setIsModalOpen(true);
   };
@@ -99,32 +113,59 @@ function FincasPage() {
     }));
   };
 
-  const handleCreate = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.productorId) {
-      setError("Debes seleccionar un productor.");
-      return;
+        setError("Debes seleccionar un productor.");
+        return;
     }
 
     try {
-      setSaving(true);
-      setError("");
-      setSuccess("");
+        setSaving(true);
+        setError("");
+        setSuccess("");
 
-      await createFinca({
+        const payload = {
         nombre: form.nombre.trim(),
         altitud: Number(form.altitud),
         productorId: Number(form.productorId),
-      });
+        };
 
-      setSuccess("Finca creada correctamente.");
-      handleCloseModal();
-      await loadData();
+        if (editingFinca) {
+        await updateFinca(editingFinca.id, payload);
+        setSuccess("Finca actualizada correctamente.");
+        } else {
+        await createFinca(payload);
+        setSuccess("Finca creada correctamente.");
+        }
+
+        handleCloseModal();
+        await loadData();
     } catch (err) {
-      setError(err.message || "No fue posible crear la finca.");
+        setError(err.message || "No fue posible guardar la finca.");
     } finally {
-      setSaving(false);
+        setSaving(false);
+    }
+  };
+
+  const handleDelete = async (finca) => {
+    const confirmDelete = window.confirm(
+        `¿Seguro que deseas eliminar la finca "${finca.nombre}"?`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+        setError("");
+        setSuccess("");
+
+        await deleteFinca(finca.id);
+
+        setSuccess("Finca eliminada correctamente.");
+        await loadData();
+    } catch (err) {
+        setError(err.message || "No fue posible eliminar la finca.");
     }
   };
 
@@ -139,7 +180,7 @@ function FincasPage() {
         </div>
 
         {isAdmin && (
-          <button style={styles.primaryButton} onClick={handleOpenModal}>
+          <button style={styles.primaryButton} onClick={handleOpenCreateModal}>
             + Crear finca
           </button>
         )}
@@ -181,6 +222,7 @@ function FincasPage() {
                   <th style={styles.th}>Altitud</th>
                   <th style={styles.th}>Productor</th>
                   <th style={styles.th}>Estado</th>
+                  <th style={styles.th}>Acciones</th>
                 </tr>
               </thead>
 
@@ -195,6 +237,28 @@ function FincasPage() {
                     <td style={styles.td}>
                       <span style={styles.statusBadge}>Activo</span>
                     </td>
+
+                    <td style={styles.td}>
+                        {isAdmin && (
+                            <div style={styles.actions}>
+                            <button
+                                type="button"
+                                style={styles.editButton}
+                                onClick={() => handleOpenEditModal(item)}
+                            >
+                                Editar
+                            </button>
+
+                            <button
+                                type="button"
+                                style={styles.deleteButton}
+                                onClick={() => handleDelete(item)}
+                            >
+                                Eliminar
+                            </button>
+                            </div>
+                        )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -205,7 +269,7 @@ function FincasPage() {
 
       <Modal
         isOpen={isModalOpen}
-        title="Crear finca"
+        title={editingFinca ? "Editar finca" : "Crear finca"}
         onClose={handleCloseModal}
       >
         <form onSubmit={handleCreate} style={styles.formGrid}>
@@ -267,7 +331,10 @@ function FincasPage() {
               style={styles.primaryButton}
               disabled={saving}
             >
-              {saving ? "Guardando..." : "Guardar finca"}
+              {saving ? "Guardando..."
+                : editingFinca
+                ? "Actualizar finca"
+                : "Guardar finca"}
             </button>
           </div>
         </form>
@@ -430,6 +497,29 @@ const styles = {
     borderRadius: "10px",
     backgroundColor: "#e7f6ea",
     color: "#1b5e20",
+  },
+  actions: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  editButton: {
+    padding: "8px 10px",
+    borderRadius: "8px",
+    border: "1px solid #2E7D32",
+    backgroundColor: "#fff",
+    color: "#2E7D32",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  deleteButton: {
+    padding: "8px 10px",
+    borderRadius: "8px",
+    border: "1px solid #b71c1c",
+    backgroundColor: "#fff",
+    color: "#b71c1c",
+    fontWeight: "bold",
+    cursor: "pointer",
   },
 };
 

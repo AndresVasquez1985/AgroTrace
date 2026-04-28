@@ -15,8 +15,8 @@ function Topbar({ onMenuClick }) {
       </button>
 
       <div style={styles.userInfo}>
-        <h2 style={styles.title}>Panel Administrativo</h2>
-        <p style={styles.subtitle}>
+        <h2 className="admin-topbar-title" style={styles.title}>Panel Administrativo</h2>
+        <p className="admin-topbar-subtitle" style={styles.subtitle}>
           {user?.fullName} | {user?.role} | {user?.tenantCode}
         </p>
       </div>
