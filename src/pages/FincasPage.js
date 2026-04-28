@@ -272,7 +272,7 @@ function FincasPage() {
         title={editingFinca ? "Editar finca" : "Crear finca"}
         onClose={handleCloseModal}
       >
-        <form onSubmit={handleCreate} style={styles.formGrid}>
+        <form onSubmit={handleSubmit} style={styles.formGrid}>
           <div style={styles.field}>
             <label style={styles.label}>Nombre de la finca</label>
             <input
