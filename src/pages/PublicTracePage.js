@@ -18,6 +18,8 @@ function PublicTracePage() {
     async (codigo) => {
       try {
         setLoading(true);
+        setData(null);
+
         codigo = codigo.replace(baseUrl + "/", "");
 
         const response = await fetch(
@@ -26,7 +28,6 @@ function PublicTracePage() {
 
         if (!response.ok) {
           alert("QR no encontrado o error en API");
-          setLoading(false);
           return;
         }
 
@@ -34,7 +35,6 @@ function PublicTracePage() {
 
         if (!text) {
           alert("Respuesta vacía del servidor");
-          setLoading(false);
           return;
         }
 
@@ -85,7 +85,15 @@ function PublicTracePage() {
   useEffect(() => {
     const path = window.location.pathname.replace("/", "");
 
-    if (path && !path.startsWith("login") && !path.startsWith("dashboard") && !path.startsWith("users")) {
+    if (
+      path &&
+      !path.startsWith("login") &&
+      !path.startsWith("dashboard") &&
+      !path.startsWith("users") &&
+      !path.startsWith("productores") &&
+      !path.startsWith("fincas") &&
+      !path.startsWith("lotes")
+    ) {
       setQr(path);
       consultar(path);
     }
@@ -135,9 +143,9 @@ function PublicTracePage() {
 
       {data && (
         <div style={styles.card}>
-          <h2>📦 Código QR</h2>
+          <h2 style={styles.mainSectionTitle}>📦 Código QR</h2>
 
-          <div ref={qrRef}>
+          <div style={styles.qrBox} ref={qrRef}>
             <QRCodeCanvas value={`${baseUrl}/${data.lote.codigoQR}`} size={200} />
           </div>
 
@@ -146,8 +154,26 @@ function PublicTracePage() {
           </button>
 
           <div style={styles.section}>
-            <h3>☕ Información del lote</h3>
-            <p><strong>Código:</strong> {data.lote.codigoQR}</p>
+            <h3 style={styles.sectionTitle}>☕ Información del lote</h3>
+            <p>
+              <strong>Código:</strong> {data.lote?.codigoQR || "No disponible"}
+            </p>
+            <p>
+              <strong>Fecha:</strong>{" "}
+              {data.lote?.fecha
+                ? new Date(data.lote.fecha).toLocaleDateString()
+                : "No disponible"}
+            </p>
+          </div>
+
+          <div style={styles.highlightSection}>
+            <h3 style={styles.sectionTitle}>🌱 Tipo de café</h3>
+            <p style={styles.productName}>
+              {data.tipoProducto?.nombre || "No definido"}
+            </p>
+            <p style={styles.productDescription}>
+              {data.tipoProducto?.descripcion || "Sin descripción disponible"}
+            </p>
           </div>
 
           <div style={styles.section}>
@@ -157,7 +183,9 @@ function PublicTracePage() {
             </p>
             <p>
               <strong>Altitud:</strong>{" "}
-              {data.finca?.altitud ? `${data.finca.altitud} msnm` : "No disponible"}
+              {data.finca?.altitud
+                ? `${data.finca.altitud} msnm`
+                : "No disponible"}
             </p>
           </div>
 
@@ -180,32 +208,40 @@ function PublicTracePage() {
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>👨‍🌾 Información del productor</h3>
             <p>
-              <strong>Nombre:</strong> {data.productor?.nombre || "No disponible"}
+              <strong>Nombre:</strong>{" "}
+              {data.productor?.nombre || "No disponible"}
             </p>
           </div>
 
-          <h2>🔄 Procesos</h2>
-          <div style={styles.timeline}>
-            {data.procesos.map((p, i) => (
-              <div key={i} style={styles.timelineItem}>
-                <div style={styles.timelineDot}></div>
+          <h2 style={styles.mainSectionTitle}>🔄 Procesos</h2>
 
-                <div style={styles.timelineContent}>
-                  <h4 style={styles.timelineTitle}>{p.nombre}</h4>
+          {data.procesos && data.procesos.length > 0 ? (
+            <div style={styles.timeline}>
+              {data.procesos.map((p, i) => (
+                <div key={i} style={styles.timelineItem}>
+                  <div style={styles.timelineDot}></div>
 
-                  <p style={styles.timelineText}>
-                    {p.observaciones || "Sin observaciones"}
-                  </p>
+                  <div style={styles.timelineContent}>
+                    <h4 style={styles.timelineTitle}>{p.nombre}</h4>
 
-                  {p.fecha && (
-                    <span style={styles.timelineDate}>
-                      {new Date(p.fecha).toLocaleDateString()}
-                    </span>
-                  )}
+                    <p style={styles.timelineText}>
+                      {p.observaciones || "Sin observaciones"}
+                    </p>
+
+                    {p.fecha && (
+                      <span style={styles.timelineDate}>
+                        {new Date(p.fecha).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={styles.emptyState}>
+              No hay procesos registrados para este lote.
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -215,7 +251,7 @@ function PublicTracePage() {
 const styles = {
   container: {
     fontFamily: "Arial",
-    maxWidth: "700px",
+    maxWidth: "760px",
     margin: "auto",
     padding: "20px",
     textAlign: "center",
@@ -268,9 +304,16 @@ const styles = {
   card: {
     marginTop: "24px",
     padding: "20px",
-    borderRadius: "14px",
-    backgroundColor: "#f5f5f5",
+    borderRadius: "18px",
+    backgroundColor: "#f5f7f5",
     textAlign: "left",
+    boxShadow: "0 8px 22px rgba(0,0,0,0.08)",
+  },
+  qrBox: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "12px",
+    marginBottom: "10px",
   },
   reader: {
     marginTop: "20px",
@@ -288,6 +331,10 @@ const styles = {
     animation: "spin 1s linear infinite",
     margin: "auto",
   },
+  mainSectionTitle: {
+    color: "#1f3d2f",
+    marginTop: "10px",
+  },
   section: {
     backgroundColor: "#fff",
     padding: "16px",
@@ -295,23 +342,39 @@ const styles = {
     marginTop: "16px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
   },
-
+  highlightSection: {
+    backgroundColor: "#edf8ef",
+    padding: "18px",
+    borderRadius: "14px",
+    marginTop: "16px",
+    border: "1px solid #cfe8d2",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  },
   sectionTitle: {
     marginTop: 0,
     marginBottom: "10px",
     color: "#1f3d2f",
+  },
+  productName: {
+    fontSize: "22px",
+    fontWeight: "bold",
+    color: "#2E7D32",
+    margin: "6px 0",
+  },
+  productDescription: {
+    color: "#4d5a52",
+    lineHeight: "1.5",
+    marginBottom: 0,
   },
   timeline: {
     marginTop: "10px",
     borderLeft: "3px solid #2E7D32",
     paddingLeft: "16px",
   },
-
   timelineItem: {
     position: "relative",
     marginBottom: "20px",
   },
-
   timelineDot: {
     width: "12px",
     height: "12px",
@@ -321,29 +384,33 @@ const styles = {
     left: "-23px",
     top: "6px",
   },
-
   timelineContent: {
     backgroundColor: "#fff",
     padding: "12px",
     borderRadius: "10px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
   },
-
   timelineTitle: {
     margin: 0,
     color: "#1f3d2f",
   },
-
   timelineText: {
     margin: "6px 0",
     color: "#555",
   },
-
   timelineDate: {
     fontSize: "12px",
     color: "#888",
   },
-
+  emptyState: {
+    backgroundColor: "#fff",
+    padding: "16px",
+    borderRadius: "12px",
+    marginTop: "12px",
+    color: "#6b756f",
+    textAlign: "center",
+    border: "1px dashed #d6ddd8",
+  },
   mapBox: {
     backgroundColor: "#fff",
     padding: "16px",
@@ -351,7 +418,6 @@ const styles = {
     marginTop: "16px",
     boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
   },
-
   map: {
     border: 0,
     borderRadius: "12px",
