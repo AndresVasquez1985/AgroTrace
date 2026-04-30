@@ -161,6 +161,22 @@ function PublicTracePage() {
             </p>
           </div>
 
+          {data.finca?.latitud && data.finca?.longitud && (
+            <div style={styles.mapBox}>
+              <h3 style={styles.sectionTitle}>📍 Ubicación de la finca</h3>
+
+              <iframe
+                title="Ubicación de la finca"
+                width="100%"
+                height="260"
+                style={styles.map}
+                loading="lazy"
+                allowFullScreen
+                src={`https://www.google.com/maps?q=${data.finca.latitud},${data.finca.longitud}&z=15&output=embed`}
+              />
+            </div>
+          )}
+
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>👨‍🌾 Información del productor</h3>
             <p>
@@ -326,6 +342,20 @@ const styles = {
   timelineDate: {
     fontSize: "12px",
     color: "#888",
+  },
+
+  mapBox: {
+    backgroundColor: "#fff",
+    padding: "16px",
+    borderRadius: "12px",
+    marginTop: "16px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  },
+
+  map: {
+    border: 0,
+    borderRadius: "12px",
+    marginTop: "8px",
   },
 };
 

@@ -23,6 +23,8 @@ function FincasPage() {
   const [form, setForm] = useState({
     nombre: "",
     altitud: "",
+    latitud: "",
+    longitud: "",
     productorId: "",
   });
 
@@ -79,6 +81,8 @@ function FincasPage() {
     setForm({
         nombre: "",
         altitud: "",
+        latitud: "",
+        longitud: "",
         productorId: "",
     });
     setIsModalOpen(true);
@@ -91,6 +95,8 @@ function FincasPage() {
     setForm({
         nombre: finca.nombre || "",
         altitud: finca.altitud || "",
+        latitud: finca.latitud || "",
+        longitud: finca.longitud || "",
         productorId: finca.productorId || "",
     });
     setIsModalOpen(true);
@@ -101,6 +107,8 @@ function FincasPage() {
     setForm({
       nombre: "",
       altitud: "",
+      latitud: "",
+      longitud: "",
       productorId: "",
     });
   };
@@ -130,6 +138,8 @@ function FincasPage() {
         const payload = {
         nombre: form.nombre.trim(),
         altitud: Number(form.altitud),
+        latitud: form.latitud ? Number(form.latitud) : null,
+        longitud: form.longitud ? Number(form.longitud) : null,
         productorId: Number(form.productorId),
         };
 
@@ -222,6 +232,8 @@ function FincasPage() {
                   <tr>
                     <th style={styles.th}>Nombre</th>
                     <th style={styles.th}>Altitud</th>
+                    <th style={styles.th}>Latitud</th>
+                    <th style={styles.th}>Longitud</th>
                     <th style={styles.th}>Productor</th>
                     <th style={styles.th}>Estado</th>
                     <th style={styles.th}>Acciones</th>
@@ -233,6 +245,12 @@ function FincasPage() {
                     <tr key={item.id}>
                       <td style={styles.td}>{item.nombre}</td>
                       <td style={styles.td}>{item.altitud} msnm</td>
+                      <td style={styles.td}>
+                        {item.latitud ?? "No registrada"}
+                      </td>
+                      <td style={styles.td}>
+                        {item.longitud ?? "No registrada"}
+                      </td>
                       <td style={styles.td}>
                         {getProductorNombre(item.productorId)}
                       </td>
@@ -298,6 +316,32 @@ function FincasPage() {
                 onChange={handleChange}
                 placeholder="Ej: 1450"
                 required
+              />
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Latitud</label>
+              <input
+                style={styles.input}
+                type="number"
+                step="any"
+                name="latitud"
+                value={form.latitud}
+                onChange={handleChange}
+                placeholder="Ej: 4.8143"
+              />
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Longitud</label>
+              <input
+                style={styles.input}
+                type="number"
+                step="any"
+                name="longitud"
+                value={form.longitud}
+                onChange={handleChange}
+                placeholder="Ej: -75.6946"
               />
             </div>
 
