@@ -7,6 +7,7 @@ import UsersPage from "./pages/UsersPage";
 import ProductoresPage from "./pages/ProductoresPage";
 import FincasPage from "./pages/FincasPage";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import LotesPage from "./pages/LotesPage";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -51,6 +52,15 @@ function App() {
           element={
             <ProtectedRoute>
               <FincasPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/lotes"
+          element={
+            <ProtectedRoute>
+              <LotesPage />
             </ProtectedRoute>
           }
         />

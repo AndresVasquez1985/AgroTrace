@@ -9,6 +9,7 @@ function Sidebar({ isOpen, onClose }) {
     { label: "Usuarios", path: "/users" },
     { label: "Productores", path: "/productores" },
     { label: "Fincas", path: "/fincas" },
+    { label: "Lotes", path: "/lotes" },
     { label: "Trazabilidad", path: "/" },
   ];
 
