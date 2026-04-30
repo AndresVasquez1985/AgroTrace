@@ -145,25 +145,51 @@ function PublicTracePage() {
             ⬇️ Descargar QR
           </button>
 
-          <h2>☕ Lote</h2>
-          <p>
-            <strong>QR:</strong> {data.lote.codigoQR}
-          </p>
+          <div style={styles.section}>
+            <h3>☕ Información del lote</h3>
+            <p><strong>Código:</strong> {data.lote.codigoQR}</p>
+          </div>
 
-          <h2>🌄 Finca</h2>
-          <p>{data.finca.nombre}</p>
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>🌄 Información de la finca</h3>
+            <p>
+              <strong>Nombre:</strong> {data.finca?.nombre || "No disponible"}
+            </p>
+            <p>
+              <strong>Altitud:</strong>{" "}
+              {data.finca?.altitud ? `${data.finca.altitud} msnm` : "No disponible"}
+            </p>
+          </div>
 
-          <h2>👨‍🌾 Productor</h2>
-          <p>{data.productor.nombre}</p>
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>👨‍🌾 Información del productor</h3>
+            <p>
+              <strong>Nombre:</strong> {data.productor?.nombre || "No disponible"}
+            </p>
+          </div>
 
           <h2>🔄 Procesos</h2>
-          <ul>
+          <div style={styles.timeline}>
             {data.procesos.map((p, i) => (
-              <li key={i}>
-                {p.nombre} - {p.observaciones}
-              </li>
+              <div key={i} style={styles.timelineItem}>
+                <div style={styles.timelineDot}></div>
+
+                <div style={styles.timelineContent}>
+                  <h4 style={styles.timelineTitle}>{p.nombre}</h4>
+
+                  <p style={styles.timelineText}>
+                    {p.observaciones || "Sin observaciones"}
+                  </p>
+
+                  {p.fecha && (
+                    <span style={styles.timelineDate}>
+                      {new Date(p.fecha).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>
@@ -245,6 +271,61 @@ const styles = {
     height: "40px",
     animation: "spin 1s linear infinite",
     margin: "auto",
+  },
+  section: {
+    backgroundColor: "#fff",
+    padding: "16px",
+    borderRadius: "12px",
+    marginTop: "16px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  },
+
+  sectionTitle: {
+    marginTop: 0,
+    marginBottom: "10px",
+    color: "#1f3d2f",
+  },
+  timeline: {
+    marginTop: "10px",
+    borderLeft: "3px solid #2E7D32",
+    paddingLeft: "16px",
+  },
+
+  timelineItem: {
+    position: "relative",
+    marginBottom: "20px",
+  },
+
+  timelineDot: {
+    width: "12px",
+    height: "12px",
+    backgroundColor: "#2E7D32",
+    borderRadius: "50%",
+    position: "absolute",
+    left: "-23px",
+    top: "6px",
+  },
+
+  timelineContent: {
+    backgroundColor: "#fff",
+    padding: "12px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  },
+
+  timelineTitle: {
+    margin: 0,
+    color: "#1f3d2f",
+  },
+
+  timelineText: {
+    margin: "6px 0",
+    color: "#555",
+  },
+
+  timelineDate: {
+    fontSize: "12px",
+    color: "#888",
   },
 };
 
