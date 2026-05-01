@@ -9,6 +9,7 @@ import {
   updateLote,
 } from "../services/loteService";
 import { useAuth } from "../auth/AuthContext";
+import { getTipoProductos } from "../services/tipoProductoService";
 
 function LotesPage() {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ function LotesPage() {
   const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLote, setEditingLote] = useState(null);
+  const [tipoProductos, setTipoProductos] = useState([]);
 
   const [form, setForm] = useState({
     fincaId: "",
@@ -37,10 +39,13 @@ function LotesPage() {
       setLoading(true);
       setError("");
 
-      const [lotesData, fincasData] = await Promise.all([
+      const [lotesData, fincasData, tipoProductosData] = await Promise.all([
         getLotes(),
         getFincas(),
+        getTipoProductos(),
       ]);
+
+      setTipoProductos(tipoProductosData || []);
 
       setLotes(lotesData || []);
       setFilteredLotes(lotesData || []);
@@ -65,16 +70,21 @@ function LotesPage() {
       return (
         item.codigoQR?.toLowerCase().includes(term) ||
         finca?.nombre?.toLowerCase().includes(term) ||
-        String(item.tipoProductoId || "").includes(term)
+        getTipoProductoNombre(item.tipoProductoId).toLowerCase().includes(term)
       );
     });
 
     setFilteredLotes(result);
-  }, [searchTerm, lotes, fincas]);
+  }, [searchTerm, lotes, fincas, tipoProductos]);
 
   const getFincaNombre = (fincaId) => {
     const finca = fincas.find((f) => f.id === fincaId);
     return finca?.nombre || "Sin finca";
+  };
+
+  const getTipoProductoNombre = (tipoProductoId) => {
+    const tipo = tipoProductos.find((t) => t.id === tipoProductoId);
+    return tipo
   };
 
   const handleOpenCreateModal = () => {
@@ -245,7 +255,9 @@ function LotesPage() {
                           : "Sin fecha"}
                       </td>
                       <td style={styles.td}>{getFincaNombre(item.fincaId)}</td>
-                      <td style={styles.td}>{item.tipoProductoId}</td>
+                      <td style={styles.td}>
+                        {getTipoProductoNombre(item.tipoProductoId)}
+                      </td>
                       <td style={styles.td}>
                         {isAdmin && (
                           <div style={styles.actions}>
@@ -300,16 +312,21 @@ function LotesPage() {
             </div>
 
             <div style={styles.field}>
-              <label style={styles.label}>Tipo producto</label>
-              <input
+              <label style={styles.label}>Tipo de café</label>
+              <select
                 style={styles.input}
-                type="number"
                 name="tipoProductoId"
                 value={form.tipoProductoId}
                 onChange={handleChange}
-                placeholder="Ej: 1"
                 required
-              />
+              >
+                <option value="">Seleccione tipo de café</option>
+                {tipoProductos.map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div style={styles.modalActions}>
