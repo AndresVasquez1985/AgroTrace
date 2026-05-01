@@ -70,7 +70,9 @@ function LotesPage() {
       return (
         item.codigoQR?.toLowerCase().includes(term) ||
         finca?.nombre?.toLowerCase().includes(term) ||
-        getTipoProductoNombre(item.tipoProductoId).toLowerCase().includes(term)
+        getTipoProductoNombre(tipoProductos, item.tipoProductoId)
+        .toLowerCase()
+        .includes(term)
       );
     });
 
@@ -82,10 +84,10 @@ function LotesPage() {
     return finca?.nombre || "Sin finca";
   };
 
-  const getTipoProductoNombre = (tipoProductoId) => {
+  function getTipoProductoNombre(tipoProductos, tipoProductoId) {
     const tipo = tipoProductos.find((t) => t.id === tipoProductoId);
-    return tipo
-  };
+    return tipo?.nombre || "Sin tipo";
+  }
 
   const handleOpenCreateModal = () => {
     setEditingLote(null);
@@ -256,7 +258,7 @@ function LotesPage() {
                       </td>
                       <td style={styles.td}>{getFincaNombre(item.fincaId)}</td>
                       <td style={styles.td}>
-                        {getTipoProductoNombre(item.tipoProductoId)}
+                        {getTipoProductoNombre(tipoProductos, item.tipoProductoId)}
                       </td>
                       <td style={styles.td}>
                         {isAdmin && (
