@@ -17,6 +17,7 @@ function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const COLORS = ["#2E7D32", "#66BB6A", "#A5D6A7", "#1B5E20"];
 
   const loadStats = async () => {
     try {
@@ -66,10 +67,10 @@ function DashboardPage() {
                       dataKey="total"
                       nameKey="tipoProducto"
                       outerRadius={90}
-                      label
+                      label={({ name, value }) => `${name}: ${value}`}
                     >
                       {(stats?.lotesPorTipoProducto || []).map((_, index) => (
-                        <Cell key={`cell-${index}`} />
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -85,10 +86,43 @@ function DashboardPage() {
                     <XAxis dataKey="finca" />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
-                    <Bar dataKey="total" />
+                    <Bar dataKey="total" fill="#2E7D32" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+            </div>
+            <div style={{ ...styles.card, marginTop: "16px" }}>
+              <h2 style={styles.sectionTitle}>Últimos lotes</h2>
+
+              {(stats?.ultimosLotes || []).length === 0 ? (
+                <p style={styles.emptyText}>No hay datos</p>
+              ) : (
+                <div style={styles.tableWrapper}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.th}>Código</th>
+                        <th style={styles.th}>Finca</th>
+                        <th style={styles.th}>Tipo</th>
+                        <th style={styles.th}>Fecha</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {stats.ultimosLotes.map((l) => (
+                        <tr key={l.codigoQR}>
+                          <td style={styles.td}>{l.codigoQR}</td>
+                          <td style={styles.td}>{l.finca}</td>
+                          <td style={styles.td}>{l.tipoProducto}</td>
+                          <td style={styles.td}>
+                            {l.fecha ? new Date(l.fecha).toLocaleDateString() : "Sin fecha"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -164,6 +198,31 @@ const styles = {
     backgroundColor: "#fdeaea",
     color: "#b71c1c",
   },
+  tableWrapper: {
+  overflowX: "auto",
+},
+
+table: {
+  width: "100%",
+  borderCollapse: "collapse",
+},
+
+th: {
+  textAlign: "left",
+  padding: "12px",
+  backgroundColor: "#f8fbf9",
+  borderBottom: "1px solid #e8ece9",
+  color: "#385046",
+},
+
+td: {
+  padding: "12px",
+  borderBottom: "1px solid #edf1ee",
+},
+
+emptyText: {
+  color: "#6b756f",
+},
 };
 
 export default DashboardPage;
