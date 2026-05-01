@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import { getDashboardStats } from "../services/dashboardService";
 import {
@@ -14,6 +15,7 @@ import {
 } from "recharts";
 
 function DashboardPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -109,8 +111,22 @@ function DashboardPage() {
                     </thead>
 
                     <tbody>
-                      {stats.ultimosLotes.map((l) => (
-                        <tr key={l.codigoQR}>
+                      {stats.ultimosLotes.map((l, index) => (
+                        <tr
+                          key={l.codigoQR}
+                          style={{
+                            ...styles.tableRow,
+                            ...(index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd),
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#eaf5ec";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              index % 2 === 0 ? "#ffffff" : "#f8fbf9";
+                          }}
+                          onClick={() => navigate(`/${l.codigoQR}`)}
+                        >
                           <td style={styles.td}>{l.codigoQR}</td>
                           <td style={styles.td}>{l.finca}</td>
                           <td style={styles.td}>{l.tipoProducto}</td>
@@ -222,6 +238,18 @@ td: {
 
 emptyText: {
   color: "#6b756f",
+},
+tableRow: {
+  cursor: "pointer",
+  transition: "background-color 0.2s ease",
+},
+
+tableRowEven: {
+  backgroundColor: "#ffffff",
+},
+
+tableRowOdd: {
+  backgroundColor: "#f8fbf9",
 },
 };
 
