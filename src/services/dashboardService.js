@@ -10,8 +10,8 @@ async function parseResponse(response) {
   }
 }
 
-export async function getDashboardStats() {
-  const response = await apiFetch("/api/dashboard/stats", {
+export async function getDashboardStats(range = "all") {
+  const response = await apiFetch(`/api/dashboard/stats?range=${range}`, {
     method: "GET",
   });
 

@@ -20,13 +20,14 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const COLORS = ["#2E7D32", "#66BB6A", "#A5D6A7", "#1B5E20"];
+  const [range, setRange] = useState("all");
 
   const loadStats = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const data = await getDashboardStats();
+      const data = await getDashboardStats(range);
       setStats(data);
     } catch (err) {
       setError(err.message || "No fue posible cargar el dashboard.");
@@ -37,13 +38,28 @@ function DashboardPage() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [range]);
 
   return (
     <AdminLayout>
       <div style={styles.page}>
         <h1 style={styles.title}>Dashboard</h1>
         <p style={styles.subtitle}>Resumen general de AgroTrace.</p>
+
+        <div style={styles.filterRow}>
+          <label style={styles.filterLabel}>Periodo:</label>
+
+          <select
+            style={styles.select}
+            value={range}
+            onChange={(e) => setRange(e.target.value)}
+          >
+            <option value="all">Todo</option>
+            <option value="7">Últimos 7 días</option>
+            <option value="30">Últimos 30 días</option>
+            <option value="month">Este mes</option>
+          </select>
+        </div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
@@ -250,6 +266,25 @@ tableRowEven: {
 
 tableRowOdd: {
   backgroundColor: "#f8fbf9",
+},
+
+filterRow: {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  marginBottom: "20px",
+},
+
+filterLabel: {
+  fontWeight: "bold",
+  color: "#385046",
+},
+
+select: {
+  padding: "10px 12px",
+  borderRadius: "10px",
+  border: "1px solid #d6ddd8",
+  backgroundColor: "#fff",
 },
 };
 
