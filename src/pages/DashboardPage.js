@@ -22,21 +22,21 @@ function DashboardPage() {
   const COLORS = ["#2E7D32", "#66BB6A", "#A5D6A7", "#1B5E20"];
   const [range, setRange] = useState("all");
 
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getDashboardStats(range);
-      setStats(data);
-    } catch (err) {
-      setError(err.message || "No fue posible cargar el dashboard.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+  const loadStats = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getDashboardStats(range);
+        setStats(data);
+      } catch (err) {
+        setError(err.message || "No fue posible cargar el dashboard.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadStats();
   }, [range]);
 
